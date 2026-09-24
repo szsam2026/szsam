@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14B8A6">
+<title>PET 单词乐园</title>
+
+<script>
+(function(){
+  'use strict';
+  window.__PET_ERRORS__ = [];
+  window.__PET_SHOW_ERROR__ = function(msg){
+    try {
+      var box = document.getElementById('global-error');
+      var el  = document.getElementById('global-error-msg');
+      if (box && el) { el.textContent = String(msg || '页面遇到了一点小问题'); box.style.display = 'flex'; }
+      else { window.__PET_ERRORS__.push({ msg: String(msg) }); }
+    } catch(e){}
+  };
+  window.addEventListener('error', function(e){
+    try { window.__PET_SHOW_ERROR__(e && e.message ? e.message : '页面脚本错误'); } catch(err){}
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    try {
+      var m = (e && e.reason && e.reason.message) ? e.reason.message : '异步操作错误';
+      window.__PET_SHOW_ERROR__(m);
+    } catch(err){}
+  });
+})();
+</script>
+
+<style>
+  /* 难度标签 */
+.level-tag{
+  position:absolute;top:14px;right:60px;
+  font-size:10px;font-weight:800;
+  padding:3px 8px;border-radius:999px;white-space:nowrap;
+}
+.level-tag.pet{background:#E0F5F2;color:#0D9488;border:1.5px solid #99F6E4;}
+.level-tag.basic{background:#DBEAFE;color:#1D4ED8;border:1.5px solid #BFDBFE;}
+
+/* 词库列表难度小圆点 */
+.lv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.lv-dot.pet{background:#14B8A6;}
+.lv-dot.basic{background:#3B82F6;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{--teal:#14B8A6;--blue:#3B82F6;--orange:#F97316;--purple:#8B5CF6;--green:#10B981;--text:#1E3A3A;--muted:#7B9B9B;}
+  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--text);display:flex;justify-content:center;background:#E6F4F1;-webkit-user-select:none;user-select:none;}
+  #app{width:100%;max-width:520px;height:100vh;height:100dvh;display:flex;flex-direction:column;background:linear-gradient(180deg,#E6F4F1 0%,#F0FBFF 38%,#FFF7F0 100%);overflow:hidden;position:relative;box-shadow:0 0 40px rgba(20,140,120,.12);}
+  .topbar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 14px;background:linear-gradient(120deg,#5EEAD4,#14B8A6 48%,#3B82F6);border-radius:0 0 28px 28px;color:#fff;box-shadow:0 6px 20px rgba(20,184,166,.28);position:relative;z-index:5;}
+  .brand-wrap{display:flex;align-items:center;gap:10px;min-width:0}
+  .avatar-btn{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.30);border:2px solid rgba(255,255,255,.55);display:grid;place-items:center;font-size:22px;cursor:pointer;transition:.15s;}
+  .avatar-btn:active{transform:scale(.92)}
+  .user-info{min-width:0}
+  .user-greeting{font-size:11px;opacity:.9;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .user-name{font-size:16px;font-weight:800;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+  .user-name .edit-icon{font-size:11px;margin-left:4px;opacity:.75}
+  .streak{font-size:13px;font-weight:800;background:rgba(255,255,255,.30);padding:6px 14px;border-radius:999px;border:1.5px solid rgba(255,255,255,.45);white-space:nowrap;}
+  main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 16px 26px}
+  .tabbar{flex:none;display:flex;background:#fff;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 20px rgba(20,184,166,.12);}
+  .tabbar button{flex:1;border:0;background:none;padding:10px 0 11px;font-size:11px;color:#9CB5B5;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600;}
+  .tabbar button i{font-size:21px;line-height:1;font-style:normal;transition:transform .18s}
+  .tabbar button.active{color:var(--teal);font-weight:800}
+  .tabbar button.active i{transform:scale(1.18) translateY(-1px)}
+  .card{background:#fff;border-radius:24px;padding:18px;border:3px solid #F0F8F6;box-shadow:0 5px 0 rgba(20,184,166,.09),0 12px 26px rgba(20,184,166,.10);margin-bottom:16px;}
+  .card.center{text-align:center}
+  h2{margin:8px 0 6px;font-size:21px;font-weight:800}
+  .muted{color:var(--muted);font-size:14px;margin:6px 0;font-weight:600}
+  .small{font-size:12px}
+  .big-emoji{font-size:56px;line-height:1.1}
+  .btn{display:block;width:100%;border:0;border-radius:999px;padding:17px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;letter-spacing:.5px;background:linear-gradient(180deg,#2DD4BF,#0D9488);box-shadow:0 6px 0 #0F766E,0 12px 22px rgba(13,148,136,.28);margin-bottom:16px;transition:transform .1s,box-shadow .1s;}
+  .btn:active{transform:translateY(5px);box-shadow:0 1px 0 #0F766E}
+  .btn.ghost{background:#fff;color:#0D9488;border:2.5px solid #CCF0EB;box-shadow:0 4px 0 #E0F5F2;}
+  .btn.ghost:active{transform:translateY(3px);box-shadow:0 1px 0 #E0F5F2}
+  .btn.review{background:linear-gradient(180deg,#FDBA74,#F97316);box-shadow:0 6px 0 #EA580C,0 12px 22px rgba(249,115,22,.28);}
+  .btn.review:active{box-shadow:0 1px 0 #EA580C}
+  .btn.small{padding:12px;font-size:15px;margin-bottom:0}
+  .hero{background:linear-gradient(140deg,#FFFFFF,#F0FBFF);border-radius:26px;padding:20px;border:3px solid #F0F8F6;box-shadow:0 5px 0 rgba(20,184,166,.09),0 12px 26px rgba(20,184,166,.10);margin-bottom:16px;}
+  .hero-row{display:flex;align-items:center;gap:14px}
+  .hero-emoji{font-size:38px;line-height:1;flex:none;width:64px;height:64px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(140deg,#DCFCE7,#CFFAFE);}
+  .hero-title{font-size:18px;font-weight:800;margin-bottom:4px}
+  .hero-sub{font-size:13px;color:var(--muted);font-weight:600}
+  .stars-row{display:flex;flex-wrap:wrap;gap:3px;margin:16px 0 6px;justify-content:center}
+  .star{font-size:19px;opacity:.25;transition:.25s;line-height:1}
+  .star.on{opacity:1}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .hero-stats div{background:#F0FBFF;border-radius:16px;padding:11px 6px;text-align:center;border:2px solid #E0F5F2;}
+  .hero-stats b{display:block;font-size:19px;color:var(--teal);font-weight:800}
+  .hero-stats small{font-size:11px;color:var(--muted);font-weight:700}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .stat{background:#fff;border-radius:18px;padding:14px 6px;text-align:center;border:3px solid #F0F8F6;box-shadow:0 4px 0 rgba(20,184,166,.08);}
+  .stat b{display:block;font-size:20px;color:var(--teal);font-weight:800}
+  .stat small{font-size:11px;color:var(--muted);font-weight:700}
+  .week{display:flex;gap:6px;justify-content:space-between;margin-top:12px}
+  .day{flex:1;text-align:center}
+  .day .dot{width:100%;aspect-ratio:1;max-width:38px;margin:0 auto;border-radius:12px;background:#EEF7F5;display:grid;place-items:center;font-size:15px;color:#B8D1CE;transition:.2s;font-weight:700;}
+  .day .dot.on{background:linear-gradient(140deg,#5EEAD4,#14B8A6);color:#fff;box-shadow:0 3px 10px rgba(20,184,166,.35)}
+  .day .dot.today{outline:2.5px solid var(--orange);outline-offset:2px}
+  .day small{display:block;font-size:10px;color:var(--muted);margin-top:5px;font-weight:700}
+  .flash-card{perspective:1100px;height:260px;margin-bottom:18px;cursor:pointer}
+  .flash-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .6s cubic-bezier(.35,.1,.25,1);}
+  .flash-card.flipped .flash-inner{transform:rotateY(180deg)}
+  .flash-face{position:absolute;top:0;left:0;right:0;bottom:0;border-radius:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;}
+  .flash-front{background:#fff;border:3px solid #E0F5F2;box-shadow:0 7px 0 rgba(20,184,166,.12),0 16px 32px rgba(20,184,166,.16);}
+  .flash-back{background:linear-gradient(150deg,#14B8A6,#3B82F6 90%);color:#fff;transform:rotateY(180deg);box-shadow:0 7px 0 rgba(13,148,136,.35),0 16px 32px rgba(13,148,136,.32);}
+  .flash-tag{position:absolute;top:14px;left:16px;font-size:12px;font-weight:800;background:#E0F5F2;color:#0D9488;padding:5px 12px;border-radius:999px;max-width:50%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .flash-back .flash-tag{background:rgba(255,255,255,.30);color:#fff}
+  .flash-stage{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;background:#FFF6E0;color:#C99012;padding:5px 10px;border-radius:999px;white-space:nowrap;}
+  .sound-btn{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:50%;border:0;background:#E0F5F2;font-size:19px;cursor:pointer;display:grid;place-items:center;transition:.12s;}
+  .sound-btn:active{transform:scale(.9)}
+  .flash-back .sound-btn{background:rgba(255,255,255,.28)}
+  .flash-word{font-size:34px;font-weight:900;color:#1E3A3A;letter-spacing:.5px;word-break:break-word;text-align:center;line-height:1.15;}
+  .flash-cn{font-size:26px;font-weight:900;text-align:center;text-shadow:0 2px 10px rgba(20,80,80,.20);line-height:1.3;}
+  .flash-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:12px;color:#B8D1CE;font-weight:700;}
+  .flash-back .flash-hint{color:rgba(255,255,255,.80)}
+.level-tag{
+  position:absolute;top:14px;right:60px;
+  font-size:10px;font-weight:800;
+  padding:3px 8px;border-radius:999px;white-space:nowrap;
+}
+.level-tag.pet{background:#E0F5F2;color:#0D9488;border:1.5px solid #99F6E4;}
+.level-tag.basic{background:#DBEAFE;color:#1D4ED8;border:1.5px solid #BFDBFE;}
+.lv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.lv-dot.pet{background:#14B8A6;}
+.lv-dot.basic{background:#3B82F6;}
+  .answer-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .ans-btn{border:0;border-radius:22px;padding:14px 6px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;font-weight:800;color:#fff;letter-spacing:.5px;transition:transform .1s,box-shadow .1s;}
+  .ans-emoji{font-size:27px;line-height:1}
+  .ans-no{background:linear-gradient(180deg,#FDBA74,#F97316);box-shadow:0 6px 0 #EA580C}
+  .ans-no:active{transform:translateY(5px);box-shadow:0 1px 0 #EA580C}
+  .ans-yes{background:linear-gradient(180deg,#5EEAD4,#14B8A6);box-shadow:0 6px 0 #0F766E}
+  .ans-yes:active{transform:translateY(5px);box-shadow:0 1px 0 #0F766E}
+  .bar{height:10px;background:#EEF7F5;border-radius:999px;overflow:hidden;margin:8px 0 16px}
+  .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#5EEAD4,#14B8A6,#3B82F6);transition:width .35s;}
+  .learn-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .q-word{font-size:30px;font-weight:900;text-align:center;margin:6px 0 4px;color:#1E3A3A;word-break:break-word;}
+  .opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:2.5px solid #E0F5F2;background:#fff;border-radius:18px;padding:15px 16px;font-size:16px;font-family:inherit;font-weight:700;color:var(--text);margin-bottom:10px;cursor:pointer;transition:.12s;}
+  .opt .k{width:26px;height:26px;border-radius:9px;background:#EEF7F5;color:#7B9B9B;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;}
+  .opt.right{border-color:#10B981;background:#ECFDF5}
+  .opt.right .k{background:#10B981;color:#fff}
+  .opt.wrong{border-color:#F97316;background:#FFF7ED}
+  .opt.wrong .k{background:#F97316;color:#fff}
+  .search-wrap{margin-bottom:14px}
+  .search-wrap input{width:100%;border:3px solid #E0F5F2;background:#fff;border-radius:20px;padding:14px 18px;font-size:15px;font-family:inherit;font-weight:700;color:var(--text);outline:none;box-shadow:0 4px 0 rgba(20,184,166,.07);}
+  .word-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border-radius:18px;padding:13px 15px;margin-bottom:9px;border:3px solid #F5FBFA;box-shadow:0 3px 0 rgba(20,184,166,.06);}
+  .wr-w{font-size:16px;font-weight:800}
+  .wr-z{font-size:13px;color:var(--muted);margin-top:3px;font-weight:600}
+  .wr-right{display:flex;align-items:center;gap:8px;flex:none}
+  .badge{font-size:10px;padding:4px 9px;border-radius:999px;font-weight:800;white-space:nowrap}
+  .badge.new{background:#EEF7F5;color:#9CB5B5}
+  .badge.learning{background:#FFF6E0;color:#C99012}
+  .badge.mastered{background:#ECFDF5;color:#0D9488}
+  .badge.review{background:#FFEDD5;color:#C2410C}
+  .icon-btn{border:0;background:#E0F5F2;border-radius:11px;width:34px;height:34px;font-size:15px;cursor:pointer;line-height:1;display:grid;place-items:center;}
+  .seg{display:flex;gap:9px;margin-top:12px}
+  .seg button{flex:1;border:2.5px solid #E0F5F2;background:#fff;border-radius:16px;padding:12px 0;font-size:15px;font-weight:800;font-family:inherit;color:var(--muted);cursor:pointer;transition:.15s;}
+  .seg button.on{border-color:#14B8A6;color:#0D9488;background:#E0F5F2;box-shadow:0 3px 0 #B8E8E0}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:2px dashed #F0F8F6;font-size:15px;font-weight:700;}
+  .row:last-child{border-bottom:0}
+  .row b{color:var(--teal)}
+  .tip{background:#F0FDF9;border-color:#A7F3D0}
+  .tip b{font-size:14px;display:block}
+  .tip p{font-size:13px;color:#3F7259;margin:8px 0 0;line-height:1.7;font-weight:600}
+  .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:rgba(30,58,58,.94);color:#fff;font-size:14px;font-weight:700;padding:12px 22px;border-radius:999px;z-index:99;pointer-events:none;white-space:nowrap;}
+  .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+  .result-grid div{background:#F0FBFF;border-radius:16px;padding:13px 4px;border:2px solid #E0F5F2}
+  .result-grid b{display:block;font-size:20px;color:var(--teal);font-weight:800}
+  .result-grid small{font-size:11px;color:var(--muted);font-weight:700}
+  #global-error{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(20,40,40,.55);z-index:9999;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+  #global-error .g-box{background:#fff;border-radius:22px;padding:24px 20px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(20,60,60,.35);border:3px solid #F0F8F6;}
+  #global-error .g-emoji{font-size:44px;line-height:1;margin-bottom:8px}
+  #global-error h3{margin:0 0 8px;font-size:18px;color:#1E3A3A}
+  #global-error p{margin:0 0 16px;font-size:14px;color:#5B7373;word-break:break-word;line-height:1.6;font-weight:600;}
+  #global-error button{border:0;border-radius:999px;padding:12px 26px;font-size:15px;font-weight:800;font-family:inherit;color:#fff;cursor:pointer;background:linear-gradient(180deg,#2DD4BF,#0D9488);box-shadow:0 4px 0 #0F766E;}
+  .tabbar button i::before{display:inline-block;min-width:1em}
+  .name-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(20,40,40,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+  .name-modal.show{display:flex}
+  .name-modal .nm-box{background:#fff;border-radius:26px;padding:26px 22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(20,60,60,.40);border:3px solid #F0F8F6;position:relative;}
+  .name-modal .nm-emoji{font-size:56px;line-height:1;margin-bottom:8px}
+  .name-modal h3{margin:0 0 8px;font-size:20px;font-weight:800;color:#1E3A3A}
+  .name-modal .nm-tip{margin:0 0 18px;font-size:13px;color:var(--muted);font-weight:600;line-height:1.6;}
+  .name-modal input{width:100%;border:3px solid #CCF0EB;background:#F5FBFA;border-radius:16px;padding:14px 18px;font-size:17px;font-weight:800;font-family:inherit;color:var(--text);outline:none;text-align:center;margin-bottom:14px;transition:.15s;}
+  .name-modal input:focus{border-color:#14B8A6;background:#fff}
+  .name-modal .nm-avatars{display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .name-modal .nm-avatars button{width:46px;height:46px;border-radius:50%;border:2.5px solid #E0F5F2;background:#fff;font-size:24px;cursor:pointer;transition:.12s;display:grid;place-items:center;padding:0;}
+  .name-modal .nm-avatars button.on{border-color:#14B8A6;background:#E0F5F2;transform:scale(1.08);box-shadow:0 3px 10px rgba(20,184,166,.35);}
+  .name-modal .nm-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .name-modal .nm-btn{border:0;border-radius:999px;padding:14px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;transition:transform .1s;}
+  .name-modal .nm-btn.confirm{background:linear-gradient(180deg,#2DD4BF,#0D9488);color:#fff;box-shadow:0 5px 0 #0F766E;}
+  .name-modal .nm-btn.cancel{background:#fff;color:#0D9488;border:2.5px solid #CCF0EB;box-shadow:0 4px 0 #E0F5F2;}
+  .spell-wrap{background:#fff;border-radius:24px;padding:20px 18px;border:3px solid #E0F5F2;box-shadow:0 5px 0 rgba(20,184,166,.09);margin-bottom:16px;}
+  .spell-title{text-align:center;font-size:15px;font-weight:800;color:var(--teal);margin-bottom:4px;}
+  .spell-cn{text-align:center;font-size:22px;font-weight:900;color:#1E3A3A;margin:8px 0 6px;line-height:1.3;}
+  .spell-hint-line{text-align:center;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:14px;}
+  .spell-input-wrap{position:relative;margin-bottom:14px}
+  .spell-input{width:100%;border:3px solid #CCF0EB;background:#F5FBFA;border-radius:16px;padding:16px 50px 16px 18px;font-size:22px;font-weight:800;font-family:inherit;color:var(--text);outline:none;text-align:center;letter-spacing:2px;transition:.15s;}
+  .spell-input:focus{border-color:#14B8A6;background:#fff}
+  .spell-input.ok{border-color:#10B981;background:#ECFDF5;color:#0D9488}
+  .spell-input.bad{border-color:#F97316;background:#FFF7ED;color:#C2410C}
+  .spell-speak{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:#E0F5F2;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;display:grid;place-items:center;}
+  .spell-feedback{min-height:26px;text-align:center;font-size:14px;font-weight:800;margin-bottom:12px;transition:.15s;}
+  .spell-feedback.ok{color:#0D9488}
+  .spell-feedback.bad{color:#C2410C}
+  .spell-tries{display:flex;justify-content:center;gap:6px;margin-bottom:14px;}
+  .spell-tries .dot-try{width:12px;height:12px;border-radius:50%;background:#CCF0EB;transition:.2s;}
+  .spell-tries .dot-try.used{background:#F97316}
+  .spell-result{border-radius:24px;padding:22px 18px;text-align:center;border:3px solid #F0F8F6;background:#fff;margin-bottom:16px;box-shadow:0 5px 0 rgba(20,184,166,.09);}
+  .spell-result .sr-emoji{font-size:54px;line-height:1;margin-bottom:6px}
+  .spell-result h3{margin:0 0 6px;font-size:20px;font-weight:800}
+  .spell-result p{margin:0;font-size:14px;color:var(--muted);font-weight:600;line-height:1.6}
+  .spell-result .sr-word{display:inline-block;margin:12px 0 6px;font-size:24px;font-weight:900;color:var(--teal);background:#E0F5F2;border-radius:12px;padding:8px 18px;letter-spacing:1px;word-break:break-word;max-width:100%;}
+  .spell-result .sr-cn{font-size:15px;font-weight:700;color:var(--text)}
+  .spell-badge{display:inline-block;font-size:11px;font-weight:800;background:#FFF6E0;color:#C99012;padding:3px 9px;border-radius:999px;margin-left:6px;}
+  .review-badge{display:inline-block;font-size:11px;font-weight:800;background:#FFEDD5;color:#C2410C;padding:3px 9px;border-radius:999px;margin-left:6px;}
+  .review-alert{background:linear-gradient(140deg,#FFF7ED,#FFEDD5);border:3px solid #FED7AA;border-radius:22px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+  .review-alert .ra-icon{font-size:32px;line-height:1;flex:none;}
+  .review-alert .ra-text{flex:1;min-width:0}
+  .review-alert .ra-title{font-size:15px;font-weight:800;color:#C2410C;margin-bottom:3px}
+  .review-alert .ra-sub{font-size:12px;color:#9A3412;font-weight:600;line-height:1.5}
+  .review-alert .ra-count{font-size:28px;font-weight:900;color:#EA580C;flex:none;line-height:1;}
+  .forecast{display:flex;gap:6px;justify-content:space-between;margin-top:10px;}
+  .forecast .fc-item{flex:1;text-align:center;background:#F0FBFF;border-radius:12px;padding:8px 2px;border:2px solid #E0F5F2;}
+  .forecast .fc-item.today{background:#FFEDD5;border-color:#FED7AA;}
+  .forecast .fc-day{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px;}
+  .forecast .fc-num{font-size:15px;font-weight:800;color:var(--teal);}
+  .forecast .fc-item.today .fc-num{color:#EA580C;}
+  .forecast .fc-num.zero{color:#C5D5D3;}
+  .mastery{display:inline-flex;gap:1px;line-height:1;}
+  .mastery .m-star{font-size:10px;opacity:.22;}
+  .mastery .m-star.on{opacity:1;}
+  .stage-pill{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;}
+  .stage-pill.s1{background:#DBEAFE;color:#1D4ED8}
+  .stage-pill.s2{background:#DCFCE7;color:#166534}
+  .stage-pill.s3{background:#FEF3C7;color:#92400E}
+  .stage-pill.s4{background:#FCE7F3;color:#9D174D}
+  .stage-pill.s5{background:#EDE9FE;color:#5B21B6}
+  .stage-pill.s6{background:#CFFAFE;color:#0E7490}
+  .stage-pill.s7{background:#FEF9C3;color:#854D0E}
+</style>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+(function(){
+  'use strict';
+  try {
+    if (typeof tailwind !== 'undefined' && tailwind && typeof tailwind === 'object') {
+      tailwind.config = { theme:{ extend:{ colors:{ pet:{
+        teal:'#14B8A6', blue:'#3B82F6', orange:'#F97316',
+        purple:'#8B5CF6', green:'#10B981', ink:'#1E3A3A'
+      } } } } };
+    }
+  } catch(e){}
+})();
+</script>
+</head>
+
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand-wrap">
+      <button class="avatar-btn" onclick="PET.openNameModal()" title="点击修改名字">
+        <span id="avatarEmoji">&#x1F98A;</span>
+      </button>
+      <div class="user-info">
+        <div class="user-greeting" id="userGreeting">你好呀</div>
+        <div class="user-name" id="userNameDisplay">PET 小勇士<span class="edit-icon">&#x270F;&#xFE0F;</span></div>
+      </div>
+    </div>
+    <div class="streak" id="streakBadge">连续 0 天</div>
+  </header>
+
+  <main id="main">
+    <div class="card center">
+      <div class="big-emoji">&#x1F4DA;</div>
+      <h2>正在准备中…</h2>
+      <p class="muted">如果长时间没反应，请下拉刷新</p>
+    </div>
+  </main>
+
+  <nav class="tabbar">
+    <button data-tab="home" class="active"><i>&#x1F3E0;</i>打卡</button>
+    <button data-tab="learn"><i>&#x1F4DA;</i>学习</button>
+    <button data-tab="quiz"><i>&#x1F3AF;</i>测验</button>
+    <button data-tab="words"><i>&#x1F4D6;</i>词库</button>
+    <button data-tab="me"><i>&#x2699;</i>我的</button>
+  </nav>
+</div>
+
+<div id="global-error" role="alert">
+  <div class="g-box">
+    <div class="g-emoji">&#x26A0;&#xFE0F;</div>
+    <h3>小问题提示</h3>
+    <p id="global-error-msg">页面遇到了一点小问题</p>
+    <button type="button" onclick="document.getElementById('global-error').style.display='none'">知道了</button>
+  </div>
+</div>
+
+<div class="name-modal" id="nameModal">
+  <div class="nm-box">
+    <div class="nm-emoji" id="nmEmoji">&#x1F98A;</div>
+    <h3 id="nmTitle">欢迎来到 PET 单词乐园！</h3>
+    <p class="nm-tip" id="nmTip">给自己起一个名字吧，可以随时修改哦～</p>
+    <div class="nm-avatars" id="nmAvatars"></div>
+    <input type="text" id="nmInput" maxlength="12" placeholder="输入你的名字（最多 12 字）" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div class="nm-btn-row">
+      <button type="button" class="nm-btn cancel" id="nmCancelBtn" onclick="PET.closeNameModal()">取消</button>
+      <button type="button" class="nm-btn confirm" onclick="PET.confirmName()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================
+   一、PET 词库（17 大类，约 530 个词）
+   ========================================================== */
+var RAW = [
+["人物与关系","\uD83D\uDC65",
+"acquaintance|熟人  adolescent|青少年  adult|成年人  ancestor|祖先  aunt|姑姑  baby|婴儿  bachelor|单身汉  bride|新娘  brother|兄弟  character|性格  citizen|公民  classmate|同学  colleague|同事  companion|同伴  cousin|堂表兄弟姐妹  crowd|人群  daughter|女儿  descendant|后代  enemy|敌人  family|家庭  father|父亲  generation|一代人  grandfather|祖父  grandmother|祖母  guest|客人  hero|英雄  husband|丈夫  individual|个人  inhabitant|居民  leader|领导者  male|男性的  member|成员  mother|母亲  neighbour|邻居  parent|父母  partner|伙伴  passenger|乘客  person|人  population|人口  relative|亲戚  sister|姐妹  son|儿子  stranger|陌生人  teenager|青少年  twin|双胞胎  visitor|访客  wife|妻子  youngster|年轻人"],
+
+["情感与态度","\uD83D\uDE0C",
+"afraid|害怕的  amazed|惊讶的  ambitious|有雄心的  angry|生气的  annoyed|恼怒的  anxious|焦虑的  ashamed|羞愧的  attitude|态度  bored|无聊的  brave|勇敢的  calm|冷静的  cheerful|愉快的  confident|自信的  confused|困惑的  curious|好奇的  delighted|高兴的  depressed|沮丧的  determined|坚定的  disappointed|失望的  eager|渴望的  embarrassed|尴尬的  emotion|情感  enthusiastic|热情的  envy|羡慕  excited|兴奋的  fear|恐惧  frustrated|沮丧的  furious|狂怒的  generous|慷慨的  gentle|温柔的  grateful|感激的  greedy|贪婪的  guilty|内疚的  honest|诚实的  hope|希望  humble|谦逊的  jealous|嫉妒的  joy|喜悦  kind|友善的  lazy|懒惰的  lonely|孤独的  loyal|忠诚的  mood|心情  motivation|动机  nervous|紧张的  optimistic|乐观的  panic|恐慌  passion|热情  patient|有耐心的  peaceful|平静的  pessimistic|悲观的  polite|礼貌的  proud|骄傲的  regret|后悔  respect|尊重  satisfied|满意的  selfish|自私的  sensible|明智的  sensitive|敏感的  serious|严肃的  shy|害羞的  sincere|真诚的  stress|压力  stubborn|固执的  temper|脾气  tense|紧张的  trust|信任  upset|心烦的  worried|担心的"],
+
+["教育与学习","\uD83C\uDF93",
+"academic|学术的  achieve|达到  assignment|作业  attend|参加  attendance|出勤  attention|注意力  average|平均  behaviour|行为  certificate|证书  college|学院  course|课程  curriculum|课程体系  degree|学位  department|系  detention|留校  diploma|文凭  discipline|纪律  education|教育  elementary|初级的  essay|论文  exam|考试  excellent|优秀的  exercise|练习  fail|失败  grade|分数  graduate|毕业  grammar|语法  homework|作业  instruction|指导  knowledge|知识  laboratory|实验室  lecture|讲座  lesson|课  library|图书馆  mark|分数  memorize|记住  notes|笔记  pass|通过  presentation|演示  professor|教授  progress|进步  pupil|小学生  qualification|资格  research|研究  revise|复习  scholarship|奖学金  semester|学期  seminar|研讨会  skill|技能  student|学生  study|学习  subject|科目  syllabus|教学大纲  task|任务  teach|教  term|学期  test|测验  textbook|教科书  theory|理论  tuition|学费  tutor|导师  university|大学  vocabulary|词汇"],
+
+["工作与职业","\uD83D\uDCBC",
+"accountant|会计  ambition|雄心  application|申请  apply|申请  apprentice|学徒  architect|建筑师  assistant|助理  author|作家  career|职业  carpenter|木匠  cashier|出纳员  colleague|同事  company|公司  contract|合同  cook|厨师  council|委员会  customer|顾客  deadline|截止日期  dentist|牙医  designer|设计师  director|主管  dismiss|解雇  earn|赚  employee|雇员  employer|雇主  engineer|工程师  experience|经验  expert|专家  firefighter|消防员  freelance|自由职业  gardener|园丁  interview|面试  journalist|记者  labour|劳动  lawyer|律师  leader|领导  manager|经理  mechanic|机械师  nurse|护士  occupation|职业  officer|官员  part-time|兼职  pharmacist|药剂师  photographer|摄影师  pilot|飞行员  plumber|水管工  position|职位  profession|专业职业  programmer|程序员  promotion|晋升  receptionist|接待员  recruit|招募  resign|辞职  retire|退休  salary|薪水  scientist|科学家  secretary|秘书  self-employed|自雇的  shift|轮班  soldier|士兵  staff|员工  supervisor|主管  surgeon|外科医生  technician|技术员  translator|翻译  unemployed|失业的  wage|工资  waiter|服务员  workplace|工作场所"],
+
+["旅行与休闲","\uD83C\uDFD6",
+"accommodation|住宿  adventure|冒险  airline|航空公司  airport|机场  arrival|到达  attraction|景点  baggage|行李  boarding pass|登机牌  book|预订  brochure|小册子  cabin|小屋  cancel|取消  camping|露营  caravan|房车  coach tour|长途汽车旅游  cruise|游轮  currency|货币  customs|海关  delay|延误  departure|出发  destination|目的地  diary|日记  duty-free|免税  embassy|大使馆  excursion|远足  explore|探索  fare|票价  ferry|渡船  flight|航班  guide|导游  guidebook|旅行指南  harbour|港口  hike|远足  hostel|青年旅舍  hotel|旅馆  itinerary|行程  journey|旅程  landmark|地标  luggage|行李  motel|汽车旅馆  national park|国家公园  package tour|包价旅游  passport|护照  platform|站台  resort|度假胜地  route|路线  sightseeing|观光  souvenir|纪念品  suitcase|行李箱  tent|帐篷  timetable|时刻表  tour|旅游  tourist|游客  transfer|转乘  transport|交通工具  travel agency|旅行社  trip|旅行  vacancy|空房  visa|签证  voyage|航程  wander|漫步  wildlife|野生动物  zone|区域"],
+
+["科技与媒体","\uD83D\uDCBB",
+"account|账户  app|应用程序  application|应用程序  artificial|人工的  battery|电池  blog|博客  broadcast|广播  browser|浏览器  cable|电缆  camera|相机  channel|频道  charger|充电器  chat|聊天  click|点击  computer|电脑  connect|连接  data|数据  database|数据库  device|设备  digital|数字的  download|下载  electronic|电子的  email|电子邮件  engine|引擎  file|文件  hardware|硬件  headphones|耳机  information|信息  install|安装  internet|互联网  invention|发明  keyboard|键盘  laptop|笔记本电脑  link|链接  machine|机器  media|媒体  message|消息  microphone|麦克风  mobile|移动的  network|网络  online|在线的  password|密码  podcast|播客  printer|打印机  program|程序  screen|屏幕  search engine|搜索引擎  site|网站  smartphone|智能手机  software|软件  speaker|扬声器  tablet|平板电脑  technology|技术  update|更新  upload|上传  username|用户名  video|视频  virtual|虚拟的  website|网站  wireless|无线的  wifi|无线网络  virus|病毒"],
+
+["环境与自然","\uD83C\uDF3F",
+"atmosphere|大气  beach|海滩  climate|气候  coast|海岸  conservation|保护  continent|大陆  countryside|乡村  creature|生物  crop|庄稼  damage|损害  desert|沙漠  disaster|灾难  drought|干旱  earthquake|地震  ecology|生态学  ecosystem|生态系统  endangered|濒危的  energy|能源  environment|环境  flood|洪水  forest|森林  fossil|化石  fuel|燃料  glacier|冰川  greenhouse|温室  habitat|栖息地  hurricane|飓风  island|岛屿  jungle|丛林  landscape|风景  litter|垃圾  ocean|海洋  ozone|臭氧  planet|行星  pollution|污染  preserve|保护  rainforest|雨林  recycle|回收  renewable|可再生的  resource|资源  river|河流  rubbish|垃圾  rural|乡村的  species|物种  storm|暴风雨  temperature|温度  thunder|雷  tide|潮汐  tornado|龙卷风  toxic|有毒的  valley|山谷  volcano|火山  waste|浪费  waterfall|瀑布  weather|天气  wetland|湿地  wildlife|野生动物  wind|风  woodland|林地  urban|城市的"],
+
+["健康与生活方式","\uD83E\uDE7A",
+"addiction|上瘾  allergy|过敏  appetite|食欲  bandage|绷带  benefit|益处  calorie|卡路里  cancer|癌症  check-up|体检  cough|咳嗽  cure|治愈  diet|饮食  disease|疾病  drug|药物  emergency|急救  energy|精力  epidemic|流行病  exercise|锻炼  fever|发烧  flu|流感  habit|习惯  headache|头痛  health|健康  healthy|健康的  heart attack|心脏病  hurt|受伤  illness|疾病  immune|免疫的  infection|感染  injury|受伤  lifestyle|生活方式  medicine|药  mental|精神的  nutrition|营养  obesity|肥胖  operation|手术  pain|疼痛  patient|病人  pharmacy|药店  physical|身体的  pill|药丸  prescription|处方  recover|恢复  relax|放松  sneeze|打喷嚏  sore throat|喉咙痛  stress|压力  surgery|外科手术  symptom|症状  temperature|体温  therapy|治疗  treatment|治疗  vaccine|疫苗  vitamin|维生素  wellbeing|健康  wound|伤口  ache|疼痛  bleed|流血  breath|呼吸  swallow|吞咽"],
+
+["社会与文化","\uD83C\uDFDB",
+"ancestor|祖先  architecture|建筑  artist|艺术家  audience|观众  biography|传记  ceremony|仪式  charity|慈善  citizen|公民  civilization|文明  community|社区  concert|音乐会  conference|会议  costume|服装  culture|文化  custom|习俗  democracy|民主  economy|经济  education|教育  election|选举  entertainment|娱乐  equality|平等  exhibition|展览  festival|节日  folklore|民间传说  government|政府  heritage|遗产  history|历史  immigrant|移民  industry|工业  institution|机构  justice|正义  law|法律  legend|传说  literature|文学  monument|纪念碑  museum|博物馆  myth|神话  nation|国家  orchestra|管弦乐队  painting|绘画  parliament|议会  poetry|诗歌  policy|政策  politics|政治  population|人口  poverty|贫困  religion|宗教  revolution|革命  ritual|仪式  sculpture|雕塑  society|社会  statue|雕像  tradition|传统  tribe|部落  violence|暴力  war|战争  wealth|财富  welfare|福利  worship|崇拜  youth|青年"],
+
+["抽象概念","\uD83D\uDCA1",
+"ability|能力  achievement|成就  advantage|优势  aim|目标  ambition|雄心  amount|数量  analysis|分析  appearance|外貌  argument|争论  attitude|态度  authority|权威  balance|平衡  basis|基础  belief|信念  benefit|益处  category|类别  cause|原因  challenge|挑战  chance|机会  characteristic|特征  choice|选择  circumstance|情况  concept|概念  condition|条件  consequence|后果  contrast|对比  courage|勇气  crisis|危机  criticism|批评  decision|决定  difference|差异  disadvantage|劣势  discovery|发现  doubt|怀疑  effect|效果  effort|努力  element|要素  error|错误  evidence|证据  example|例子  exception|例外  experience|经验  experiment|实验  fact|事实  factor|因素  failure|失败  feature|特征  freedom|自由  function|功能  future|未来  goal|目标  growth|增长  identity|身份  impact|影响  impression|印象  improvement|改进  influence|影响  information|信息  inspiration|灵感  instance|实例  intention|意图  interest|兴趣  issue|问题  judgment|判断  justice|正义  knowledge|知识  limit|限制  majority|多数  meaning|意义  method|方法  minority|少数  mistake|错误  opportunity|机会  opinion|意见  origin|起源  pattern|模式  performance|表现  permission|允许  personality|个性  perspective|视角  possibility|可能性  potential|潜力  principle|原则  process|过程  progress|进步  purpose|目的  quality|质量  quantity|数量  reason|原因  relationship|关系  reputation|名誉  responsibility|责任  result|结果  role|角色  situation|情况  solution|解决方案  standard|标准  strategy|策略  strength|力量  success|成功  suggestion|建议  symbol|象征  talent|天赋  theory|理论  tradition|传统  trend|趋势  truth|真相  value|价值  variety|多样性  victory|胜利  weakness|弱点"],
+
+["常用动词","\uD83C\uDFC3",
+"accept|接受  achieve|实现  admire|钦佩  admit|承认  advise|建议  afford|负担  agree|同意  allow|允许  announce|宣布  apologize|道歉  appear|出现  apply|申请  appreciate|感激  argue|争论  arrange|安排  arrive|到达  attach|附上  attend|参加  attract|吸引  avoid|避免  behave|表现  belong|属于  borrow|借入  breathe|呼吸  celebrate|庆祝  challenge|挑战  claim|声称  compare|比较  complain|抱怨  concentrate|集中  confirm|确认  confuse|使困惑  connect|连接  consider|考虑  contain|包含  continue|继续  contribute|贡献  convince|说服  cooperate|合作  criticize|批评  decide|决定  declare|宣布  decrease|减少  defend|保卫  define|定义  delay|延迟  deliver|递送  demand|要求  deny|否认  depend|依赖  describe|描述  deserve|值得  destroy|破坏  determine|决定  develop|发展  disappear|消失  discover|发现  discuss|讨论  disturb|打扰  divide|分开  doubt|怀疑  earn|赚得  encourage|鼓励  ensure|确保  establish|建立  estimate|估计  evaluate|评价  examine|检查  exchange|交换  exist|存在  expand|扩展  expect|期望  explain|解释  explore|探索  express|表达  extend|延伸  fail|失败  fetch|取来  gain|获得  gather|聚集  handle|处理  hesitate|犹豫  hire|雇用  ignore|忽视  imagine|想象  impress|使印象深刻  improve|改进  include|包括  increase|增加  indicate|表明  influence|影响  inform|通知  insist|坚持  inspire|启发  intend|打算  interpret|解释  interrupt|打断  introduce|介绍  invent|发明  invest|投资  involve|涉及  judge|判断  justify|证明正当  lack|缺少  launch|发射  maintain|维持  manage|管理  mention|提到  obtain|获得  occur|发生  offer|提供  operate|操作  oppose|反对  organize|组织  overcome|克服  participate|参与  perform|表演  persuade|说服  postpone|推迟  predict|预测  prefer|更喜欢  prepare|准备  preserve|保护  prevent|预防  produce|生产  promote|促进  propose|提议  protect|保护  prove|证明  provide|提供  publish|出版  purchase|购买  pursue|追求  realize|意识到  recognize|认出  recommend|推荐  reduce|减少  refer|提及  reflect|反映  refuse|拒绝  regret|后悔  reject|拒绝  relax|放松  release|释放  remain|保持  remind|提醒  remove|移除  replace|代替  represent|代表  require|要求  rescue|营救  reserve|预订  resist|抵制  respect|尊重  respond|回应  restore|恢复  restrict|限制  reveal|揭示  reward|奖励  satisfy|满足  select|选择  separate|分开  settle|定居  suffer|遭受  suggest|建议  supply|供应  support|支持  suppose|假设  survive|生存  suspect|怀疑  switch|转换  tend|倾向  tolerate|忍受  translate|翻译  treat|对待  trust|信任  urge|敦促  wander|漫步  warn|警告  wonder|想知道  worry|担心"],
+
+["形容词与副词","\uD83C\uDFA8",
+"absent|缺席的  absolute|绝对的  actual|实际的  adequate|足够的  adventurous|爱冒险的  aggressive|好斗的  amazing|令人惊奇的  ancient|古代的  annual|每年的  appropriate|合适的  approximate|大约的  artificial|人造的  attractive|有吸引力的  automatic|自动的  available|可用的  average|平均的  aware|意识到的  basic|基本的  beneficial|有益的  brief|简短的  broad|宽的  capable|有能力的  careful|小心的  casual|随意的  certain|确定的  complex|复杂的  convenient|方便的  creative|有创造力的  crucial|关键的  current|当前的  delicate|精致的  desperate|绝望的  direct|直接的  distinct|明显的  diverse|多样的  efficient|高效的  elderly|年长的  elegant|优雅的  enormous|巨大的  entire|全部的  essential|必要的  exact|精确的  excellent|优秀的  expensive|昂贵的  experienced|有经验的  extraordinary|非凡的  extreme|极端的  familiar|熟悉的  fascinating|迷人的  financial|金融的  flexible|灵活的  foreign|外国的  formal|正式的  frequent|频繁的  generous|慷慨的  gentle|温柔的  gradual|逐渐的  harmful|有害的  historical|历史的  huge|巨大的  immediate|立即的  impressive|印象深刻的  independent|独立的  informal|非正式的  initial|最初的  intelligent|聪明的  intense|强烈的  internal|内部的  international|国际的  major|主要的  mature|成熟的  medical|医学的  mental|精神的  minor|次要的  modern|现代的  mutual|相互的  narrow|狭窄的  natural|自然的  necessary|必要的  negative|消极的  numerous|众多的  obvious|明显的  official|官方的  ordinary|普通的  original|原始的  particular|特定的  permanent|永久的  personal|个人的  physical|身体的  positive|积极的  powerful|强大的  practical|实用的  precious|珍贵的  precise|精确的  previous|先前的  primary|主要的  private|私人的  professional|专业的  proper|适当的  public|公共的  rare|稀有的  recent|最近的  regular|定期的  relevant|相关的  reliable|可靠的  remarkable|显著的  responsible|负责的  rough|粗糙的  rural|乡村的  severe|严重的  significant|重要的  similar|相似的  simple|简单的  slight|轻微的  smooth|光滑的  social|社会的  specific|具体的  stable|稳定的  standard|标准的  steady|稳定的  strict|严格的  sufficient|充足的  suitable|合适的  temporary|临时的  thorough|彻底的  tiny|微小的  typical|典型的  unique|独特的  unusual|不寻常的  urban|城市的  urgent|紧急的  useful|有用的  usual|通常的  valuable|有价值的  various|各种各样的  vast|广阔的  violent|暴力的  vital|至关重要的  voluntary|自愿的  weak|虚弱的  willing|愿意的"],
+
+["连接词与功能词","\uD83D\uDD17",
+"according to|根据  actually|实际上  additionally|此外  although|虽然  altogether|总共  apparently|显然  as a result|因此  as well as|以及  basically|基本上  besides|此外  briefly|简短地  by contrast|相比之下  certainly|当然  consequently|因此  conversely|相反地  currently|目前  definitely|肯定地  despite|尽管  either|也  especially|尤其  eventually|最终  exactly|确切地  finally|最后  for instance|例如  fortunately|幸运的是  furthermore|而且  generally|通常  gradually|逐渐地  however|然而  immediately|立即  in addition|此外  in conclusion|总之  in fact|事实上  in general|一般来说  in other words|换句话说  in particular|尤其  in spite of|尽管  instead|代替  likewise|同样地  mainly|主要地  meanwhile|同时  moreover|此外  namely|即  nevertheless|然而  occasionally|偶尔  on the contrary|相反  on the other hand|另一方面  otherwise|否则  particularly|特别地  perhaps|也许  personally|个人而言  previously|先前  probably|很可能  rather|相当  recently|最近  regardless|无论如何  similarly|类似地  since|既然  specifically|具体地  suddenly|突然  therefore|因此  though|虽然  thus|因此  unless|除非  unfortunately|不幸的是  whereas|然而  whether|是否  while|当……时"],
+
+["商业与金钱","\uD83D\uDCB0",
+"account|账户  advertise|做广告  afford|负担得起  amount|金额  balance|余额  bankrupt|破产的  bargain|便宜货  bill|账单  borrow|借入  brand|品牌  budget|预算  business|生意  capital|资本  cash|现金  charge|收费  cheque|支票  commercial|商业的  company|公司  compete|竞争  consumer|消费者  contract|合同  cost|花费  credit|信用  currency|货币  customer|顾客  debt|债务  demand|需求  discount|折扣  economy|经济  employ|雇用  exchange rate|汇率  expense|费用  expensive|昂贵的  export|出口  fee|费用  finance|金融  fortune|财富  fund|基金  goods|货物  income|收入  industry|工业  insurance|保险  interest|利息  invest|投资  invoice|发票  loan|贷款  loss|损失  luxury|奢侈品  market|市场  merchandise|商品  money|钱  mortgage|抵押贷款  offer|报价  owe|欠  payment|付款  pension|养老金  percentage|百分比  price|价格  profit|利润  purchase|购买  rate|比率  receipt|收据  refund|退款  revenue|收入  salary|薪水  sale|销售  save|储蓄  share|股份  shopping|购物  spend|花费  stock|股票  supply|供应  tax|税  trade|贸易  transaction|交易  value|价值  wealth|财富  wage|工资  withdraw|取款  worth|价值"]
+];
+
+/* ==========================================================
+   词库构建（去重 + 难度分层）
+   现有 RAW 里的词 → level='pet'
+   RAW_ADD 里的词 → level='basic'（如果单词已存在于 RAW 则跳过）
+   ========================================================== */
+
+/* 4 批新词合并去重后的集合，格式：单词|词性|中文 */
+var RAW_ADD = [
+["人物与关系","\uD83D\uDC65",
+"gentleman|n.|绅士  girl|n.|女孩  god|n.|神  he|pron.|他  her|det./pron.|她的；她  him|pron.|他  his|det./pron.|他的  human|n.|人类  I|pron.|我  it|pron.|它  its|det.|它的  lady|n.|女士  man|n.|男人  myself|pron.|我自己  king|n.|国王  youth|n.|青年；青春  teenager|n.|青少年  waiter|n.|男服务员  waitress|n.|女服务员  winner|n.|获胜者  woman|n.|女人  worker|n.|工人  writer|n.|作家  uncle|n.|叔叔；舅舅  vet|n.|兽医  tailor|n.|裁缝  prince|n.|王子  princess|n.|公主"],
+
+["情感与态度","\uD83D\uDE0C",
+"happy|adj.|开心的  helpful|adj.|乐于助人的  hungry|adj.|饥饿的  ill|adj.|生病的  interested|adj.|感兴趣的  interesting|adj.|有趣的  joy|n.|快乐  kind|adj./n.|善良的；种类  lazy|adj.|懒惰的  lonely|adj.|孤独的  lucky|adj.|幸运的  nervous|adj.|紧张的  nice|adj.|美好的  pleasant|adj.|令人愉快的  pleased|adj.|感到开心的  pleasure|n.|快乐  polite|adj.|有礼貌的  poor|adj.|贫穷的；差的  popular|adj.|受欢迎的  proud|adj.|骄傲的  sad|adj.|难过的  shy|adj.|害羞的  silly|adj.|傻的  stupid|adj.|愚蠢的  tired|adj.|疲倦的  tiring|adj.|令人疲惫的  ugly|adj.|丑陋的  uncomfortable|adj.|不舒服的  unforgettable|adj.|难忘的  unhappy|adj.|不开心的  unkind|adj.|不友善的  upset|adj.|难过的；心烦的  worried|adj.|担心的  wonderful|adj.|极好的  wise|adj.|明智的  angry|adj.|生气的  bored|adj.|感到无聊的  boring|adj.|令人无聊的  brave|adj.|勇敢的  careful|adj.|小心的  careless|adj.|粗心的  crazy|adj.|疯狂的  excited|adj.|感到兴奋的  exciting|adj.|令人兴奋的  friendly|adj.|友好的  funny|adj.|有趣的  comfortable|adj.|舒适的  afraid|adj.|害怕的"],
+
+["教育与学习","\uD83C\uDF93",
+"geography|n.|地理  German|adj./n.|德国的；德国人  grade|n.|年级；等级  grammar|n.|语法  history|n.|历史  homework|n.|家庭作业  instructions|n.pl.|说明  lab|n.|实验室  language|n.|语言  learn|v.|学习  lesson|n.|课  library|n.|图书馆  maths|n.|数学  meet|v.|遇见  meeting|n.|会议  note|n./v.|笔记；记录  notice|n./v.|通知；注意到  page|n.|页  paper|n.|纸；论文  passage|n.|通道；段落  pencil|n.|铅笔  physics|n.|物理  practise|v.|练习  primary|adj.|初级的  pronounce|v.|发音  question|n./v.|问题；质疑  read|v.|阅读  remember|v.|记住  repeat|v.|重复  review|n./v.|复习；评论  school|n.|学校  science|n.|科学  sentence|n.|句子  spell|v.|拼写  student|n.|学生  study|n./v.|学习；书房  subject|n.|科目；主题  survey|n.|调查  tablet|n.|平板电脑  teach|v.|教，讲授  teacher|n.|老师  teaching|n.|教学  technique|n.|技巧，技术  technology|n.|科技，技术  tense|n.|时态  term|n.|学期；术语  textbook|n.|教科书  timetable|n.|时间表，课程表  title|n.|标题  topic|n.|话题  training|n.|训练  translate|v.|翻译  translation|n.|译文；翻译  unit|n.|单元；单位  university|n.|大学  vocabulary|n.|词汇  answer|n./v.|回答  art|n.|美术  article|n.|文章  chemistry|n.|化学  class|n.|班级；课  classroom|n.|教室  college|n.|学院  diary|n.|日记  dictionary|n.|词典  discuss|v.|讨论  discussion|n.|讨论  education|n.|教育  English|n.|英语  example|n.|例子  exercise|n./v.|练习  explain|v.|解释"],
+
+["工作与职业","\uD83D\uDCBC",
+"journalist|n.|记者  judge|n./v.|法官；判断  job|n.|工作  musician|n.|音乐家  monitor|n.|班长  officer|n.|官员  painter|n.|画家  pilot|n.|飞行员  police|n.|警察  policeman|n.|男警察  policewoman|n.|女警察  president|n.|总统，主席  scientist|n.|科学家  soldier|n.|士兵  nurse|n.|护士  actor|n.|男演员  actress|n.|女演员  artist|n.|艺术家  boss|n.|老板  businessman|n.|商人  businesswoman|n.|女商人  captain|n.|队长；船长  dentist|n.|牙医  director|n.|导演；主管  doctor|n.|医生  driver|n.|司机  engineer|n.|工程师  farmer|n.|农民  talent|n.|天赋，才能  team|n.|团队，队伍  trainer|n.|教练员  unemployed|adj.|失业的  unemployment|n.|失业  union|n.|联盟；工会  wage (s)|n.|工资  workplace|n.|工作场所  workshop|n.|车间；研习班"],
+
+["旅行与休闲","\uD83C\uDFD6",
+"garden|n.|花园  holiday|n.|假期  hotel|n.|酒店  island|n.|岛屿  journey|n.|长途旅行  lake|n.|湖  mountain|n.|山  museum|n.|博物馆  ocean|n.|海洋  palace|n.|宫殿  park|n./v.|公园；停车  picnic|n./v.|野餐  plane|n.|飞机  port|n.|港口  postcard|n.|明信片  railway|n.|铁路  restaurant|n.|餐馆  ride|v./n.|骑；短途骑行  sail|n./v.|航行  sea|n.|大海  shore|n.|海岸  sight|n.|视力；景象  site|n.|地点，场地  sport|n.|运动  station|n.|车站  stay|n./v.|停留  summer|n.|夏天  Sunday|n.|星期日  takeaway|n.|外卖食品  talk show|n.|脱口秀  tent|n.|帐篷  tennis|n.|网球  table tennis|n.|乒乓球  theatre|n.|剧院  thriller|n.|惊悚小说/电影  ticket|n.|票  tour|n./v.|旅行，游览  tour guide|n.|导游  tourism|n.|旅游业  tourist|n.|游客  tournament|n.|锦标赛  train|n./v.|火车；训练  tram|n.|有轨电车  travel|v.|旅行  travel agent|n.|旅行代理人  trip|n.|短途旅行  turning|n.|转弯处  abroad|adv.|在国外  airport|n.|机场  album|n.|相册；专辑  beach|n.|海滩  boat|n.|小船  camp|n./v.|露营  cinema|n.|电影院  coast|n.|海岸  concert|n.|音乐会  countryside|n.|乡下，农村  dance|n./v.|跳舞  film|n.|电影  flight|n.|航班  fly|v.|飞"],
+
+["科技与媒体","\uD83D\uDCBB",
+"internet|n.|互联网  keyboard|n.|键盘  machine|n.|机器  media|n.|媒体  message|n.|信息  net|n.|网  online|adj./adv.|在线的  phone|n./v.|电话；打电话  photo|n.|照片  photograph|n.|照片  radio|n.|收音机  screen|n.|屏幕  signal|n./v.|信号；发信号  switch|n./v.|开关；切换  system|n.|系统  tablet|n.|平板电脑  technique|n.|技巧，技术  technology|n.|科技，技术  telephone|n./v.|电话；打电话  television (TV)|n.|电视  text message|n.|短信  torch|n.|手电筒  update|n./v.|更新  upload|n./v.|上传  video|n./v.|视频；录制视频  video game|n.|电子游戏  virus|n.|病毒  volume|n.|音量；卷  web|n.|网  webcam|n.|网络摄像头  web page|n.|网页  website|n.|网站  X-ray|n.|X光，射线  battery|n.|电池  camera|n.|相机  computer|n.|电脑  electric|adj.|电的  electricity|n.|电  engine|n.|发动机  equipment|n.|设备"],
+
+["环境与自然","\uD83C\uDF3F",
+"gas|n.|气体；汽油  grass|n.|草  ground|n.|地面  hill|n.|小山  ice|n.|冰  land|n./v.|陆地；着陆  moon|n.|月亮  nature|n.|大自然  oil|n.|油  pond|n.|池塘  pool|n.|水池，泳池  rain|n./v.|雨；下雨  river|n.|河流  rock|n.|岩石  root|n.|根  rose|n.|玫瑰  sand|n.|沙子  season|n.|季节  sky|n.|天空  snake|n.|蛇  snow|n./v.|雪；下雪  soil|n.|土壤  spring|n.|春天；泉水  star|n.|星星  stone|n.|石头  storm|n.|暴风雨  sun|n.|太阳  surface|n.|表面  thunder|n.|雷声  thunderstorm|n.|雷暴  tree|n.|树  valley|n.|山谷  waterfall|n.|瀑布  wave|n./v.|波浪；挥手  weather|n.|天气  weather forecast|n.|天气预报  west|n./adj./adv.|西方（的）；向西  western|adj.|西方的  wild|adj.|野生的  wildlife|n.|野生动物  wind|n.|风  windy|adj.|有风的  wood|n.|木头  zebra|n.|斑马  zone|n.|区域  zoo|n.|动物园  whale|n.|鲸鱼  air|n.|空气  animal|n.|动物  autumn|n.|秋天  bird|n.|鸟  cat|n.|猫  cloud|n.|云  cloudy|adj.|多云的  dog|n.|狗  duck|n.|鸭子  earth|n.|地球  elephant|n.|大象  environment|n.|环境  fish|n.|鱼  flower|n.|花"],
+
+["健康与生活方式","\uD83E\uDE7A",
+"health|n.|健康  healthy|adj.|健康的  heart|n.|心脏  heat|n./v.|热量；加热  height|n.|高度  hospital|n.|医院  knee|n.|膝盖  medicine|n.|药  neck|n.|脖子  nose|n.|鼻子  pain|n.|疼痛  patient|n./adj.|病人；耐心的  pepper|n.|胡椒  pig|n.|猪  pork|n.|猪肉  potato|n.|土豆  rice|n.|米饭；大米  salad|n.|沙拉  salt|n.|盐  sick|adj.|生病的  skin|n.|皮肤  sleep|n./v.|睡觉  smoke|n./v.|烟；吸烟  soap|n.|肥皂  sock|n.|短袜  stomach|n.|胃，腹部  sugar|n.|糖  sweet|adj./n.|甜的；糖果  swim|v.|游泳  tablet|n.|药片  temperature|n.|温度  thirsty|adj.|口渴的  throat|n.|喉咙  thumb|n.|拇指  toe|n.|脚趾  tooth / teeth|n.|牙齿  toothache|n.|牙痛  toothbrush|n.|牙刷  toothpaste|n.|牙膏  tissue|n.|纸巾  tuna|n.|金枪鱼  turkey|n.|火鸡  unhealthy|adj.|不健康的  unwell|adj.|不舒服的  vegetable|n.|蔬菜  vegetarian|n./adj.|素食者；素食的  wash|n./v.|洗  wash up|v.phr.|洗碗  washing machine|n.|洗衣机  wetsuit|n.|潜水服  yoga|n.|瑜伽  yoghurt / yogurt|n.|酸奶  ache|n./v.|疼痛  air conditioning|n.|空调  alarm|n.|警报  alarm clock|n.|闹钟  ambulance|n.|救护车  apartment|n.|公寓  arm|n.|胳膊  armchair|n.|扶手椅  bath|n.|洗澡  bathroom|n.|浴室  bread|n.|面包  breakfast|n.|早餐  brush|n./v.|刷子；刷  cake|n.|蛋糕  cheese|n.|奶酪  chicken|n.|鸡肉；小鸡  chocolate|n.|巧克力  coffee|n.|咖啡  cough|n./v.|咳嗽  dinner|n.|晚餐  disease|n.|疾病  drink|n./v.|饮料；喝  dry|adj./v.|干燥的；烘干  ear|n.|耳朵  egg|n.|鸡蛋  eye|n.|眼睛  face|n./v.|脸；面对  fat|adj./n.|胖的；脂肪  feel|v.|感觉  finger|n.|手指  fit|adj./v.|健康的；适合  food|n.|食物  foot|n.|脚  fork|n.|叉子  fruit|n.|水果"],
+
+["社会与文化","\uD83C\uDFDB",
+"Germany|n.|德国  government|n.|政府  group|n.|小组，团体  habit|n.|习惯  national|adj.|国家的  peace|n.|和平  population|n.|人口  public|adj.|公共的  republic|n.|共和国  social|adj.|社交的  state|n.|状态；国家  traditional|adj.|传统的  tower|n.|塔  town|n.|城镇  tradition|n.|传统  war|n.|战争  world|n.|世界  yard|n.|院子  age|n.|年龄  America|n.|美国  audience|n.|观众  church|n.|教堂  community|n.|社区  custom|n.|习俗"],
+
+["抽象概念","\uD83D\uDCA1",
+"goal|n.|目标；球门  guarantee|n./v.|保证  guess|n./v.|猜测  idea|n.|主意，想法  increase|n./v.|增长；增加  industry|n.|工业  interest|n./v.|兴趣；使感兴趣  level|n.|水平，等级  loss|n.|损失  luck|n.|运气  main|adj.|主要的  matter|n./v.|事情；要紧  mean|v.|意思是  meaning|n.|含义  memory|n.|记忆，回忆  method|n.|方法  mistake|n./v.|错误；弄错  moment|n.|时刻  name|n./v.|名字；命名  need|n./v.|需要  none|pron.|没有一个  object|n.|物体  opinion|n.|观点  opportunity|n.|机会  order|n./v.|命令；订单；订购  origin|n.|起源  part|n.|部分  period|n.|时期  place|n./v.|地点；放置  plan|n./v.|计划  point|n./v.|要点；指向  position|n.|位置  power|n.|力量；电力  practice|n.|练习  price|n.|价格  problem|n.|问题，难题  project|n.|项目  promise|n./v.|承诺  purpose|n.|目的  quality|n.|质量  quantity|n.|数量  range|n.|范围  rate|n.|比率，速度  reason|n.|理由  result|n.|结果  reward|n./v.|奖励；奖赏  right|adj./n.|正确的；右边  role|n.|角色  rule|n./v.|规则；统治  secret|n./adj.|秘密  sense|n.|感觉；意义  service|n.|服务  share|v./n.|分享；份额  shift|n./v.|轮班；转移  shock|n./v.|震惊  sign|n./v.|标志；签名  silence|n.|安静，沉默  size|n.|尺寸，大小  skill|n.|技能  sort|n./v.|种类；分类  sound|n./v.|声音；听起来  space|n.|空间；太空  speed|n.|速度  step|n./v.|脚步；迈步  story|n.|故事  success|n.|成功  symbol|n.|象征  talent|n.|天赋，才能  thought|n.|想法；思想  total|adj./n.|总共的；总数  touch|v.|触摸  trend|n.|趋势  trick|n.|诡计；把戏  trouble|n.|麻烦  trust|v./n.|信任  truth|n.|真相  tune|n.|曲调  type|n./v.|类型；打字  variety|n.|种类  version|n.|版本  view|n.|风景；观点  voice|n.|声音  vote|n./v.|投票  way|n.|道路；方式  wealth|n.|财富  weapon|n.|武器  weight|n.|重量  whole|adj./n.|全部（的）  wish|n./v.|希望，祝愿  wonder|v./n.|想知道；奇迹  word|n.|单词  worth|adj.|值得  ability|n.|能力  accident|n.|事故  action|n.|行动  activity|n.|活动  address|n.|地址  advantage|n.|优势  advice|n.|建议  agreement|n.|协议  ambition|n.|抱负  amount|n.|数量  apology|n.|道歉  area|n.|地区  attention|n.|注意  award|n./v.|奖品；授予  balance|n./v.|平衡  base|n.|基础  cause|n./v.|原因；导致  chance|n.|机会  change|n./v.|改变；零钱  choice|n.|选择  condition|n.|条件  control|n./v.|控制  danger|n.|危险  decision|n.|决定  degree|n.|度数；学位  description|n.|描述  development|n.|发展  difference|n.|差别  direction|n.|方向  distance|n.|距离  duty|n.|责任  effect|n.|影响  effort|n.|努力  end|n./v.|末尾；结束"],
+
+["常用动词","\uD83C\uDFC3",
+"get|v.|得到；变得  get on|v.phr.|上车；进展  give|v.|给  go|v.|去  grow|v.|生长；种植  happen|v.|发生  harm|n./v.|伤害  harvest|n./v.|收获  have|v.|有  hear|v.|听见  hide|v.|躲藏  hold|v.|握住；举办  hope|n./v.|希望  hurry|n./v.|匆忙  hurt|v.|伤害；疼痛  improve|v.|改善，提高  include|v.|包括  introduce|v.|介绍  invent|v.|发明  invite|v.|邀请  join|v.|加入  joke|n./v.|玩笑；开玩笑  jump|n./v.|跳  keep|v.|保持  kill|v.|杀死  knock|n./v.|敲，撞击  know|v.|知道，了解  laugh|n./v.|笑  lay|v.|放置；下蛋  lead|v.|领导，引导  leave|v.|离开；留下  lend|v.|借出  let|v.|让  lie|v.|躺；说谎  listen|v.|听  live|v./adj.|居住；现场的  lock|n./v.|锁；上锁  look|n./v.|看  lose|v.|丢失  love|n./v.|爱  make|v.|制作；使得  manage|v.|设法；管理  mark|n./v.|标记；分数  match|n./v.|比赛；火柴；匹配  mention|v.|提到  miss|v.|想念；错过  mix|v.|混合  move|v.|移动  name|v.|命名  need|v.|需要  note|v.|记录  notice|v.|注意到  offer|n./v.|提供  open|v.|打开  operate|v.|操作；做手术  order|v.|订购  organise|v.|组织  pack|v.|打包  paint|v.|绘画  park|v.|停车  pass|v.|通过；传递  pay|v.|支付  perform|v.|表演；执行  pick|v.|挑选；采摘  place|v.|放置  plan|v.|计划  plant|v.|种植  play|n./v.|玩耍；演奏  please|v.|使愉快  point|v.|指向  post|v.|邮寄  practise|v.|练习  praise|n./v.|表扬  predict|v.|预测  prefer|v.|更喜欢  prepare|v.|准备  present|v.|颁发  press|v.|按压  pretend|v.|假装  prevent|v.|阻止  print|n./v.|打印  produce|v.|生产  promise|v.|承诺  pronounce|v.|发音  protect|v.|保护  prove|v.|证明  provide|v.|提供  pull|v.|拉  punish|v.|惩罚  push|v.|推  put|v.|放置  question|v.|质疑  raise|v.|举起；筹集  reach|v.|到达  read|v.|阅读  realise|v.|意识到  receive|v.|收到  remember|v.|记住  repair|n./v.|修理  repeat|v.|重复  reply|n./v.|回复  report|n./v.|报告  require|v.|需要  research|n./v.|研究  rest|n./v.|休息  retire|v.|退休  return|n./v.|返回；归还  review|v.|复习  reward|v.|奖赏  ride|v.|骑  ring|v.|响铃  rise|v.|上升  rob|v.|抢劫  row|v.|划船  rule|v.|统治  run|v.|跑；运营  rush|n./v.|冲，匆忙  sail|v.|航行  satisfy|v.|使满意  save|v.|拯救；节省  say|v.|说  score|v.|得分  search|n./v.|搜索  see|v.|看见  seem|v.|似乎  sell|v.|卖  send|v.|发送  separate|v.|分离  serve|v.|服务  set|v.|放置；设置  settle|v.|解决；定居  shake|v.|摇晃  share|v.|分享  shine|v.|照耀  shoot|v.|射击；拍摄  shop|v.|购物  shout|n./v.|大喊  show|n./v.|展示  shut|v.|关闭  sign|v.|签名  signal|v.|发信号  sing|v.|唱歌  sink|v.|下沉  sit|v.|坐  skate|v.|滑冰  sleep|v.|睡觉  slide|v.|滑动  smell|v.|闻  smile|n./v.|微笑  smoke|v.|吸烟  solve|v.|解决  sort|v.|分类  sound|v.|听起来  speak|v.|说（语言）  spell|v.|拼写  spend|v.|花费；度过  spill|v.|洒出  spread|v.|传播；展开  stand|v.|站立  start|n./v.|开始；启动  stay|v.|停留  steal|v.|偷  step|v.|迈步  stick|v.|粘贴  stop|n./v.|停止  store|v.|储存  stretch|v.|伸展  strike|v.|撞击；罢工  study|v.|学习  succeed|v.|成功  suggest|v.|建议  suit|v.|适合  supply|n./v.|供应  support|n./v.|支持  suppose|v.|猜想  surprise|v.|使惊讶  surround|v.|包围  survive|v.|生存，存活  sweep|v.|扫  swim|v.|游泳  swing|v.|摇摆  switch|v.|切换  take|v.|拿；取；乘坐  take part (in)|v.phr.|参加  take place|v.phr.|发生  talk|n./v.|谈话；交谈  tap|n./v.|水龙头；轻拍  taste|n./v.|味道；品尝  teach|v.|教，讲授  tell|v.|告诉；讲述  thank|v.|感谢  think|v.|思考；认为  throw|v.|扔，投掷  throw away|v.phr.|扔掉  tidy|adj./v.|整洁的；整理  tidy up|v.phr.|收拾  tie|n./v.|领带；系  touch|v.|触摸  tour|n./v.|旅行  train|v.|训练  transfer|v.|转移，换乘  translate|v.|翻译  travel|v.|旅行  try|v.|尝试  try on|v.phr.|试穿  turn|n./v.|转动；转弯  turn down|v.phr.|调小；拒绝  turn into|v.phr.|变成  turn off|v.phr.|关闭  turn on|v.phr.|打开  turn up|v.phr.|调大；出现  type|v.|打字  understand|v.|理解  unpack|v.|打开包裹  update|v.|更新  upload|v.|上传  use|v.|使用  visit|v./n.|参观，拜访  vote|n./v.|投票  wait|n./v.|等待  wake|v.|醒来，唤醒  wake up|v.phr.|醒来  walk|n./v.|步行  want|v.|想要  warn|v.|警告  wash|n./v.|洗  watch|n./v.|观看  water|n./v.|水；浇水  wave|n./v.|挥手  wear|v.|穿，戴  welcome|v./adj.|欢迎；受欢迎的  win|v.|赢  wish|v.|希望  wonder|v.|想知道  work|n./v.|工作  work out|v.phr.|算出；锻炼  worry|n./v.|担心  write|v.|写  write down|v.phr.|写下  accept|v.|接受  achieve|v.|实现  act|v.|行动；表演  add|v.|增加  advise|v.|建议  afford|v.|负担得起  agree|v.|同意  allow|v.|允许  apologise|v.|道歉  appear|v.|出现  arrive|v.|到达  ask|v.|询问  attack|v.|攻击  attend|v.|参加  avoid|v.|避免  become|v.|变成  begin|v.|开始  believe|v.|相信  blame|v.|责备  borrow|v.|借入  break|v.|打破  bring|v.|带来  build|v.|建造  buy|v.|买  call|v.|呼叫  care|v.|关心  carry|v.|携带  catch|v.|抓住  cause|v.|导致  check|v.|检查  choose|v.|选择  climb|v.|攀爬  close|v.|关闭  collect|v.|收集  come|v.|来  communicate|v.|交流  compare|v.|比较  complain|v.|抱怨  complete|v.|完成  connect|v.|连接  consider|v.|考虑  continue|v.|继续  cook|v.|烹饪  copy|v.|复制  cost|v.|花费  count|v.|数数  cover|v.|覆盖  crash|v.|碰撞  create|v.|创造  cross|v.|穿过  cry|v.|哭  cut|v.|切  decide|v.|决定  deliver|v.|递送  depend|v.|依靠  describe|v.|描述  develop|v.|发展  die|v.|死亡  disagree|v.|不同意  discover|v.|发现  divide|v.|分开  do|v.|做  draw|v.|画画  dream|n./v.|梦想；做梦  dress|n./v.|连衣裙；穿衣服  drive|v.|驾驶  drop|v.|掉落  eat|v.|吃  encourage|v.|鼓励  enjoy|v.|享受  enter|v.|进入  escape|v.|逃跑  excuse|v.|原谅  express|v.|表达  fail|v.|失败  fall|v.|落下  feed|v.|喂养  fight|v.|打架  fill|v.|填满  find|v.|找到  finish|v.|完成  fix|v.|修理  forget|v.|忘记  form|v.|形成"],
+
+["形容词与副词","\uD83C\uDFA8",
+"able|adj.|能够的  active|adj.|积极的  actual|adj.|实际的  actually|adv.|实际上  alone|adj.|独自的  aloud|adv.|大声地  already|adv.|已经  also|adv.|也  always|adv.|总是  amazing|adj.|令人惊奇的  ancient|adj.|古老的  another|det./pron.|另一个  any|det./pron.|任何  asleep|adj.|睡着的  available|adj.|可获得的  awake|adj.|醒着的  aware|adj.|意识到的  away|adv.|离开  bad|adj.|坏的  beautiful|adj.|美丽的  best|adj./adv.|最好的  better|adj./adv.|更好的  big|adj.|大的  black|adj./n.|黑色  blind|adj.|失明的  blue|adj./n.|蓝色  both|det./pron.|两者都  bright|adj.|明亮的  brown|adj./n.|棕色  busy|adj.|忙碌的  certain|adj.|确定的  certainly|adv.|当然  cheap|adj.|便宜的  clean|adj./v.|干净的；打扫  clear|adj./v.|清楚的；清理  clever|adj.|聪明的  common|adj.|普通的  complete|adj.|完整的  cool|adj.|凉爽的  correct|adj./v.|正确的；改正  current|adj.|当前的  dangerous|adj.|危险的  dark|adj.|黑暗的  dead|adj.|死的  deep|adj.|深的  delicious|adj.|美味的  different|adj.|不同的  difficult|adj.|困难的  direct|adj./v.|直接的；指导  dirty|adj.|脏的  double|adj./v.|双倍的；加倍  early|adj./adv.|早的  easy|adj.|容易的  empty|adj./v.|空的；倒空  equal|adj.|平等的  excellent|adj.|极好的  expensive|adj.|昂贵的  extra|adj.|额外的  fair|adj.|公平的  famous|adj.|著名的  far|adj./adv.|远的  fast|adj./adv.|快的  few|det./pron.|很少  final|adj.|最后的  fine|adj.|好的  first|adj./adv.|第一  foreign|adj.|外国的  free|adj.|免费的  fresh|adj.|新鲜的  full|adj.|满的  future|n.|未来  general|adj.|普遍的  good|adj.|好的  great|adj.|伟大的  green|adj./n.|绿色  heavy|adj.|重的  high|adj.|高的  hot|adj.|热的  huge|adj.|巨大的  important|adj.|重要的  international|adj.|国际的  large|adj.|大的  last|adj./v.|最后的；持续  late|adj./adv.|晚的/地  later|adv.|稍后  least|det./adv.|最少  left|adj./n.|左边  light|n./adj.|光；轻的  little|det.|少量的  local|adj.|当地的  long|adj.|长的  low|adj.|低的  many|det.|许多  maybe|adv.|也许  modern|adj.|现代的  more|det./adv.|更多  much|det./adv.|许多  national|adj.|国家的  natural|adj.|自然的  near|prep.|在…附近  necessary|adj.|必要的  new|adj.|新的  next|adj./adv.|下一个；然后  noisy|adj.|吵闹的  now|adv.|现在  often|adv.|经常  old|adj.|老的；旧的  only|adv.|仅仅  open|adj.|开着的  opposite|adj./n.|相反的  ordinary|adj.|普通的  other|det./pron.|其他的  out|adv.|在外  outside|prep./adv.|在外面  over|prep.|在…上方  own|adj./v.|自己的；拥有  pale|adj.|苍白的  past|prep./n.|经过；过去  perfect|adj.|完美的  personal|adj.|个人的  pink|adj./n.|粉色  plenty|n.|大量  possible|adj.|可能的  practical|adj.|实际的  private|adj.|私人的  proper|adj.|合适的  public|adj.|公共的  pure|adj.|纯净的  quick|adj.|快的  quiet|adj.|安静的  quite|adv.|相当  rapid|adj.|快速的  rather|adv.|相当  ready|adj.|准备好的  real|adj.|真实的  really|adv.|真正地  red|adj./n.|红色  rich|adj.|富有的  round|adj./prep.|圆形的；围绕  safe|adj.|安全的  same|adj.|相同的  senior|adj.|年长的  serious|adj.|严肃的  several|det.|几个  shallow|adj.|浅的  sharp|adj.|锋利的  short|adj.|短的  similar|adj.|相似的  simple|adj.|简单的  single|adj.|单一的  slight|adj.|轻微的  slow|adj.|慢的  small|adj.|小的  smooth|adj.|光滑的  soft|adj.|柔软的  solid|adj.|固体的  special|adj.|特别的  steady|adj.|稳定的  still|adv./adj.|仍然；静止的  strange|adj.|奇怪的  straight|adj./adv.|直的  strong|adj.|强壮的  successful|adj.|成功的  such|det.|这样的  sure|adj.|确定的  sweet|adj.|甜的  tall|adj.|高的  tasty|adj.|美味的  temporary|adj.|临时的  thick|adj.|厚的  thin|adj.|瘦的  tight|adj.|紧的  tiny|adj.|极小的  top|adj./n.|顶部的  totally|adv.|完全地  traditional|adj.|传统的  true|adj.|真实的  typical|adj.|典型的  typical|adv.|典型地  unable|adj.|不能的  unbelievable|adj.|难以置信的  uncomfortable|adj.|不舒服的  unfair|adj.|不公平的  unforgettable|adj.|难忘的  unfortunately|adv.|不幸地  unfriendly|adj.|不友好的  unhealthy|adj.|不健康的  unkind|adj.|不友善的  unknown|adj.|未知的  unimportant|adj.|不重要的  uninterested|adj.|不感兴趣的  uninteresting|adj.|无趣的  unlikely|adj.|不太可能的  unlucky|adj.|不幸的  unnecessary|adj.|不必要的  unpleasant|adj.|令人不快的  unsure|adj.|不确定的  untidy|adj.|不整洁的  unusual|adj.|不寻常的  unwell|adj.|不舒服的  upper|adj.|上面的  upstairs|adj./adv.|在楼上  urgent|adj.|紧急的  urgently|adv.|紧急地  useful|adj.|有用的  useless|adj.|无用的  usual|adj.|通常的  usually|adv.|通常  valuable|adj.|有价值的  various|adj.|各种各样的  very|adv.|非常  weekly|adj./adv.|每周的  well|adj./adv.|健康的；好  well-known|adj.|著名的  wet|adj.|湿的  wide|adj.|宽的  wild|adj.|野生的  wonderful|adj.|极好的  wooden|adj.|木制的  working|adj.|工作的  worse|adj./adv.|更坏的  worst|adj./adv.|最坏的  worth|adj.|值得  written|adj.|书面的  wrong|adj.|错误的  yellow|adj./n.|黄色  young|adj.|年轻的  warm|adj.|温暖的"],
+
+["连接词与功能词","\uD83D\uDD17",
+"however|adv.|然而  how|adv.|如何  if|conj.|如果；是否  in|prep.|在…里面  inside|prep./adv.|在里面  instead|adv.|代替  into|prep.|进入  just|adv.|只是；刚刚  neither|det./pron.|两者都不  never|adv.|从不  no|adv.|不  nobody|pron.|没有人  nor|conj.|也不  not|adv.|不  once|adv.|一次；曾经  one|num./pron.|一；一个  or|conj.|或者  our|det.|我们的  ours|pron.|我们的  ourselves|pron.|我们自己  per|prep.|每  plus|prep.|加上  since|prep./conj.|自从；因为  so|adv./conj.|如此；所以  some|det./pron.|一些  somebody|pron.|某人  someone|pron.|某人  something|pron.|某物  sometimes|adv.|有时  somewhere|adv.|某处  soon|adv.|不久  than|conj./prep.|比  that|conj./det./pron.|那  their|det.|他们的  theirs|pron.|他们的  them|pron.|他们  themselves|pron.|他们自己  then|adv.|然后；那时  there|adv.|在那里  therefore|adv.|因此  these|det./pron.|这些  they|pron.|他们  though|conj./adv.|虽然；不过  through|prep.|穿过，通过  till|conj./prep.|直到  to|prep.|向；到  toward (s)|prep.|朝向  unless|conj.|除非  until|prep./conj.|直到  up|adv./prep.|向上  upon|prep.|在……之上  us|pron.|我们  versus|prep.|对抗  via|prep.|经由  we|pron.|我们  what|det./pron.|什么  whatever|pron./det.|无论什么  when|adv.|什么时候  whenever|conj.|无论何时  where|adv./conj.|哪里  wherever|conj.|无论哪里  whether|conj.|是否  which|pron./det.|哪一个  while, whilst|conj.|当…时候；然而  who|pron.|谁  whose|det.|谁的  why|adv.|为什么  with|prep.|和；带有  within|prep.|在…之内  without|prep.|没有  would|modal v.|将会，愿意  yet|adv./conj.|还；然而  you|pron.|你；你们  your|det.|你的；你们的  yours|pron.|你的  yourself|pron.|你自己  about|prep.|关于  above|prep.|在……上方  according to|prep.phr.|根据  across|prep.|穿过  after|prep./conj.|在…之后  again|adv.|再  against|prep.|反对  ago|adv.|以前  all|det./pron.|全部  almost|adv.|几乎  along|prep.|沿着  although|conj.|虽然  among|prep.|在…之中  and|conj.|和  as|conj./prep.|当；作为  at|prep.|在  back|n./adv.|回来  because|conj.|因为  before|prep./conj.|在…之前  behind|prep.|在…后面  below|prep.|在…下面  beside|prep.|在…旁边  between|prep.|在两者之间  but|conj.|但是  by|prep.|通过  can|modal v.|能够  could|modal v.|能够  each|det./pron.|每一个  either|det./pron.|任一  else|adj.|其他的  except|prep.|除…之外  for|prep.|为了  forward|adv.|向前  from|prep.|来自  enough|adj./adv.|足够的  even|adv.|甚至  ever|adv.|曾经"],
+
+["基础功能词","\uD83E\uDDE9",
+"here|adv.|这里  mine|pron.|我的  must|modal v.|必须  my|det.|我的  anybody|pron.|任何人  anyone|pron.|任何人  anything|pron.|任何事物  anyway|adv.|无论如何  anywhere|adv.|任何地方  everybody|pron.|每个人  everyone|pron.|每个人  everything|pron.|每件事物  everywhere|adv.|到处  thanks|n.pl.|谢谢  thank you|exclam.|谢谢你  yes|adv.|是  yeah|exclam.|是的  wow|exclam.|哇"],
+
+["代词与冠词","\uD83D\uDD24",
+"one|num./pron.|一个  that|det./pron.|那个  the|art.|定冠词  their|det.|他们的  theirs|pron.|他们的  these|det./pron.|这些  this|det./pron.|这个  those|det./pron.|那些"],
+
+["商业与金钱","\uD83D\uDCB0",
+"money|n.|钱  market|n.|市场  pay|v./n.|支付；薪水  price|n.|价格  sale|n.|销售，促销  sell|v.|卖  shop|n.|商店  store|n.|商店  supply|n./v.|供应  value|n.|价值  tax|n.|税  total|adj./n.|总共的  trade|n.|贸易  valuable|adj.|有价值的  variety|n.|种类  wage (s)|n.|工资  wealth|n.|财富  wealthy|adj.|富有的  worth|adj.|值得  account|n.|账户  advert|n.|广告  advertisement|n.|广告  agency|n.|代理处  agent|n.|代理人  bank|n.|银行  business|n.|生意  cash|n.|现金  customer|n.|顾客"],
+
+["日期与时间","\u23F0",
+"hour|n.|小时  July|n.|七月  June|n.|六月  March|n.|三月  May|n.|五月  minute|n.|分钟  month|n.|月份  morning|n.|早晨  October|n.|十月  Saturday|n.|星期六  second|num./n.|第二；秒  September|n.|九月  soon|adv.|不久  spring|n.|春天  summer|n.|夏天  Sunday|n.|星期日  Thursday|n.|星期四  Tuesday|n.|星期二  Wednesday|n.|星期三  winter|n.|冬天  year|n.|年  yesterday|adv./n.|昨天  temporary|adj.|临时的  term|n.|学期  then|adv.|然后；那时  time|n./v.|时间；计时  today|adv./n.|今天  tomorrow|adv./n.|明天  tonight|adv./n.|今晚  twice|adv.|两次  weekday|n.|工作日  weekend|n.|周末  afternoon|n.|下午  August|n.|八月  birth|n.|出生  birthday|n.|生日  century|n.|世纪  date|n.|日期  day|n.|白天  February|n.|二月  Friday|n.|星期五  Monday|n.|星期一  November|n.|十一月  December|n.|十二月  April|n.|四月  January|n.|一月"],
+
+["居家与家务","\uD83C\uDFE0",
+"garage|n.|车库  hall|n.|大厅  house|n.|房子  kitchen|n.|厨房  lamp|n.|灯  mirror|n.|镜子  oven|n.|烤箱  pan|n.|平底锅  plate|n.|盘子  room|n.|房间  shelf|n.|架子  sofa|n.|沙发  stair|n.|楼梯  towel|n.|毛巾  table|n.|桌子  table-cloth|n.|桌布  tap|n.|水龙头  tea|n.|茶  telephone|n./v.|电话  television (TV)|n.|电视  tent|n.|帐篷  toilet|n.|厕所  torch|n.|手电筒  tower|n.|塔  toy|n.|玩具  trash can|n.|垃圾桶  vase|n.|花瓶  wall|n.|墙  wallet|n.|钱包  wardrobe|n.|衣柜  washing machine|n.|洗衣机  washing-up|n.|待洗餐具  waste|adj./n./v.|废弃的；垃圾；浪费  water|n./v.|水；浇水  waterfall|n.|瀑布  wheel|n.|轮子  wheelchair|n.|轮椅  window|n.|窗户  windscreen|n.|挡风玻璃  yard|n.|院子"],
+
+["饮食与食物","\uD83C\uDF4E",
+"juice|n.|果汁  lunch|n.|午餐  meat|n.|肉  milk|n.|牛奶  meal|n.|一餐饭  menu|n.|菜单  pepper|n.|胡椒  pizza|n.|披萨  pork|n.|猪肉  potato|n.|土豆  rice|n.|米饭  salad|n.|沙拉  salt|n.|盐  snack|n.|小吃  soup|n.|汤  sugar|n.|糖  sweet|n.|糖果  tea|n.|茶  takeaway|n.|外卖  taste|n./v.|味道  tasty|adj.|美味的  toast|n.|烤面包  tomato|n.|西红柿  tuna|n.|金枪鱼  turkey|n.|火鸡  vegetable|n.|蔬菜  vegetarian|n./adj.|素食者  yoghurt / yogurt|n.|酸奶"],
+
+["服装与配饰","\uD83C\uDF81",
+"jacket|n.|夹克衫  hat|n.|帽子  glass|n.|玻璃；玻璃杯  gold|n.|黄金  pocket|n.|口袋  ring|n.|戒指  shirt|n.|衬衫  shoe|n.|鞋子  skirt|n.|短裙  T-shirt|n.|T恤衫  tie|n./v.|领带；系  tights|n.pl.|连裤袜  tracksuit|n.|运动套装  trousers|n.pl.|裤子  underpants|n.|内裤  underwear|n.|内衣  uniform|n.|制服  wetsuit|n.|潜水服"],
+
+["交通与出行","\uD83D\uDE97",
+"kilometre|n.|千米，公里  motorcycle|n.|摩托车  map|n.|地图  passenger|n.|乘客  passport|n.|护照  plane|n.|飞机  railway|n.|铁路  road|n.|马路  route|n.|路线  ship|n.|轮船  station|n.|车站  street|n.|街道  taxi|n.|出租车  traffic|n.|交通  traffic jam|n.|交通堵塞  traffic light (s)|n.|交通灯  train|n.|火车  tram|n.|有轨电车  transport|n.|交通，运输  truck|n.|卡车  tube|n.|管子；地铁  tunnel|n.|隧道  tyre|n.|轮胎  van|n.|厢式货车  vehicle|n.|交通工具  underground|adj./n.|地下的；地铁"],
+
+["自然与地理","\uD83C\uDF0D",
+"sand|n.|沙子  satellite|n.|卫星  sea|n.|大海  sky|n.|天空  snow|n./v.|雪  soil|n.|土壤  space|n.|空间；太空  star|n.|星星  stone|n.|石头  storm|n.|暴风雨  sun|n.|太阳  surface|n.|表面  thunder|n.|雷声  thunderstorm|n.|雷暴  tree|n.|树  valley|n.|山谷  waterfall|n.|瀑布  wave|n.|波浪  weather|n.|天气  weather forecast|n.|天气预报  west|n./adj./adv.|西方  western|adj.|西方的  wild|adj.|野生的  wildlife|n.|野生动物  wind|n.|风  windy|adj.|有风的  wood|n.|木头  zebra|n.|斑马  zone|n.|区域  zoo|n.|动物园  whale|n.|鲸鱼"]
+];
+
+var WORDS = [];
+(function(){
+  var seen = {};
+
+  /* 根据分类粗略推断词性 */
+  function inferPos(catName){
+    if(!catName) return '';
+    if(catName.indexOf('动词') >= 0) return 'v.';
+    if(catName.indexOf('形容词') >= 0) return 'adj.';
+    if(catName.indexOf('情感') >= 0) return 'adj.';
+    if(catName.indexOf('人物') >= 0) return 'n.';
+    if(catName.indexOf('工作') >= 0) return 'n.';
+    if(catName.indexOf('教育') >= 0) return 'n.';
+    if(catName.indexOf('食物') >= 0) return 'n.';
+    if(catName.indexOf('服装') >= 0) return 'n.';
+    if(catName.indexOf('居家') >= 0) return 'n.';
+    if(catName.indexOf('旅行') >= 0) return 'n.';
+    if(catName.indexOf('科技') >= 0) return 'n.';
+    if(catName.indexOf('环境') >= 0) return 'n.';
+    if(catName.indexOf('健康') >= 0) return 'n.';
+    if(catName.indexOf('社会') >= 0) return 'n.';
+    if(catName.indexOf('抽象') >= 0) return 'n.';
+    if(catName.indexOf('商业') >= 0) return 'n.';
+    if(catName.indexOf('日期') >= 0) return 'n.';
+    if(catName.indexOf('自然') >= 0) return 'n.';
+    if(catName.indexOf('交通') >= 0) return 'n.';
+    if(catName.indexOf('连接词') >= 0) return 'conj.';
+    if(catName.indexOf('功能词') >= 0) return 'pron.';
+    if(catName.indexOf('代词') >= 0) return 'pron.';
+    return '';
+  }
+
+  /* 1. 先加载现有 PET 词库 */
+  for(var ci=0; ci<RAW.length; ci++){
+    var catName = RAW[ci][0], catEmoji = RAW[ci][1], block = RAW[ci][2];
+    var pairs = block.split(/\s{2,}/);
+    for(var pi=0; pi<pairs.length; pi++){
+      var p = pairs[pi].trim();
+      if(!p) continue;
+      var idx = p.indexOf('|');
+      if(idx < 0) continue;
+      var w = p.slice(0, idx).trim();
+      var rest = p.slice(idx + 1).trim();
+      if(!w) continue;
+      if(seen[w]) continue;
+      seen[w] = true;
+      WORDS.push({
+        w: w,
+        z: rest,
+        cat: catName,
+        emoji: catEmoji,
+        pos: inferPos(catName),   /* 自动推断词性 */
+        level: 'pet'
+      });
+    }
+  }
+
+  /* 2. 再加载新增词库（去重后标记为 basic） */
+  for(var ci2=0; ci2<RAW_ADD.length; ci2++){
+    var catName2 = RAW_ADD[ci2][0], catEmoji2 = RAW_ADD[ci2][1], block2 = RAW_ADD[ci2][2];
+    var pairs2 = block2.split(/\s{2,}/);
+    for(var pi2=0; pi2<pairs2.length; pi2++){
+      var p2 = pairs2[pi2].trim();
+      if(!p2) continue;
+      var parts = p2.split('|');
+      if(parts.length < 3) continue;
+      var w2 = parts[0].trim();
+      var pos2 = parts[1].trim();
+      var z2 = parts[2].trim();
+      if(!w2 || !z2) continue;
+      if(seen[w2]) continue;
+      seen[w2] = true;
+      WORDS.push({
+        w: w2,
+        z: z2,
+        cat: catName2,
+        emoji: catEmoji2,
+        pos: pos2,
+        level: 'basic'
+      });
+    }
+  }
+})();
+var TOTAL_WORDS = WORDS.length;
+
+/* ==========================================================
+   二、艾宾浩斯复习阶段
+   ========================================================== */
+var STAGE_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60];
+var MAX_STAGE = 7;
+var STAGE_LABELS = ['未学','新学','初识','熟悉','巩固','熟练','掌握','精通'];
+var DAY = 86400000;
+var SPELL_MAX_TRIES = 3;
+
+/* ==========================================================
+   三、存储
+   ========================================================== */
+var KEY = 'pet_words_v3';
+function blankState(){
+  return {
+    cards:{}, history:{}, checkinsList:[],
+    settings:{ dailyNew:10, autoSpeak:true, voiceChannel:'auto' },
+    spellMastered:{}
+  };
+}
+var S = blankState();
+try {
+  var rawSaved = localStorage.getItem(KEY);
+  if(rawSaved){
+    var parsed = JSON.parse(rawSaved);
+    if(parsed && typeof parsed === 'object'){
+      if(parsed.cards) S.cards = parsed.cards;
+      if(parsed.history) S.history = parsed.history;
+      if(parsed.checkinsList && parsed.checkinsList.length !== undefined) S.checkinsList = parsed.checkinsList;
+      if(parsed.settings){
+        if(typeof parsed.settings.dailyNew === 'number') S.settings.dailyNew = parsed.settings.dailyNew;
+        if(typeof parsed.settings.autoSpeak === 'boolean') S.settings.autoSpeak = parsed.settings.autoSpeak;
+        if(typeof parsed.settings.voiceChannel === 'string') S.settings.voiceChannel = parsed.settings.voiceChannel;
+      }
+      if(parsed.spellMastered) S.spellMastered = parsed.spellMastered;
+    }
+  }
+} catch(e){ S = blankState(); }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+/* ==========================================================
+   四、用户名
+   ========================================================== */
+var PROFILE_KEY = 'pet_profile_v3';
+var DEFAULT_NAME = 'PET 小勇士';
+var DEFAULT_AVATAR = '\uD83E\uDD8A';
+var AVATAR_OPTIONS = ['\uD83E\uDD8A','\uD83D\uDC3A','\uD83E\uDD81','\uD83D\uDC2F','\uD83D\uDC2E','\uD83E\uDD84','\uD83D\uDC09','\uD83E\uDD86','\uD83E\uDD85','\uD83D\uDC26','\uD83E\uDD89','\uD83D\uDC38','\uD83D\uDC22','\uD83E\uDD8B','\uD83D\uDC1D','\u2B50'];
+var PROFILE = { name: DEFAULT_NAME, avatar: DEFAULT_AVATAR, created: false };
+(function(){
+  try {
+    var raw = localStorage.getItem(PROFILE_KEY);
+    if(raw){
+      var p = JSON.parse(raw);
+      if(p){
+        if(typeof p.name === 'string' && p.name.trim()) PROFILE.name = p.name.trim().slice(0,12);
+        if(typeof p.avatar === 'string' && p.avatar) PROFILE.avatar = p.avatar;
+        if(p.created === true) PROFILE.created = true;
+      }
+    }
+  } catch(e){}
+})();
+function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); } catch(e){} }
+
+var nameModalEl, nmInputEl, nmSelectedAvatar = DEFAULT_AVATAR, nameModalMode = 'create';
+function openNameModal(mode){
+  nameModalMode = mode || 'edit';
+  nmSelectedAvatar = PROFILE.avatar || DEFAULT_AVATAR;
+  if(!nameModalEl){ nameModalEl = document.getElementById('nameModal'); nmInputEl = document.getElementById('nmInput'); }
+  if(!nameModalEl || !nmInputEl) return;
+  document.getElementById('nmTitle').textContent = (nameModalMode === 'create') ? '欢迎来到 PET 单词乐园！' : '修改你的名字';
+  document.getElementById('nmTip').textContent = (nameModalMode === 'create') ? '给自己起一个名字吧，可以随时修改哦～' : '换一个更喜欢的名字或头像吧～';
+  document.getElementById('nmEmoji').textContent = nmSelectedAvatar;
+  document.getElementById('nmCancelBtn').style.display = (nameModalMode === 'create') ? 'none' : '';
+  renderAvatarOptions();
+  nmInputEl.value = (nameModalMode === 'create') ? '' : (PROFILE.name || '');
+  nameModalEl.classList.add('show');
+  setTimeout(function(){ try { nmInputEl.focus(); } catch(e){} }, 120);
+}
+function closeNameModal(){ if(nameModalEl) nameModalEl.classList.remove('show'); }
+function renderAvatarOptions(){
+  var wrap = document.getElementById('nmAvatars');
+  var html = '';
+  for(var i=0; i<AVATAR_OPTIONS.length; i++){
+    var av = AVATAR_OPTIONS[i];
+    html += '<button type="button" class="' + (av === nmSelectedAvatar ? 'on' : '') + '" data-av="' + escAttr(av) + '">' + av + '</button>';
+  }
+  wrap.innerHTML = html;
+  var btns = wrap.querySelectorAll('button');
+  for(var j=0; j<btns.length; j++){
+    (function(b){
+      b.addEventListener('click', function(){
+        nmSelectedAvatar = b.getAttribute('data-av');
+        document.getElementById('nmEmoji').textContent = nmSelectedAvatar;
+        var all = wrap.querySelectorAll('button');
+        for(var k=0; k<all.length; k++) all[k].classList.remove('on');
+        b.classList.add('on');
+      });
+    })(btns[j]);
+  }
+}
+function confirmName(){
+  if(!nmInputEl) nmInputEl = document.getElementById('nmInput');
+  var val = (nmInputEl.value || '').trim();
+  if(!val){ toast('名字不能为空哦～'); return; }
+  if(val.length > 12) val = val.slice(0, 12);
+  PROFILE.name = val; PROFILE.avatar = nmSelectedAvatar || DEFAULT_AVATAR; PROFILE.created = true;
+  saveProfile(); closeNameModal(); updateUserDisplay(); render(true);
+  toast(nameModalMode === 'create' ? ('欢迎你，' + PROFILE.name + '！') : '名字已更新～');
+}
+function updateUserDisplay(){
+  var nameEl = document.getElementById('userNameDisplay');
+  var avatarEl = document.getElementById('avatarEmoji');
+  var greetingEl = document.getElementById('userGreeting');
+  if(nameEl) nameEl.innerHTML = escHtml(PROFILE.name) + '<span class="edit-icon">&#x270F;&#xFE0F;</span>';
+  if(avatarEl) avatarEl.textContent = PROFILE.avatar || DEFAULT_AVATAR;
+  if(greetingEl){
+    var h = new Date().getHours(), g;
+    if(h < 6) g = '夜深了'; else if(h < 11) g = '早上好'; else if(h < 14) g = '中午好';
+    else if(h < 18) g = '下午好'; else g = '晚上好';
+    greetingEl.textContent = g;
+  }
+}
+
+/* ==========================================================
+   五、工具函数
+   ========================================================== */
+function pad(n){ return n < 10 ? '0'+n : ''+n; }
+function dstr(d){ d = d || new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function today(){ return dstr(); }
+function hist(){
+  var t = today();
+  if(!S.history[t]) S.history[t] = { 'new':0, rev:0, quizC:0, quizT:0 };
+  return S.history[t];
+}
+function dueCards(){
+  var now = Date.now(), r = [];
+  for(var i=0; i<WORDS.length; i++){
+    var c = S.cards[WORDS[i].w];
+    if(c && c.s > 0 && c.n <= now) r.push(WORDS[i]);
+  }
+  return r;
+}
+function newWordList(){
+  var r = [];
+  for(var i=0; i<WORDS.length; i++){ if(!S.cards[WORDS[i].w]) r.push(WORDS[i]); }
+  return r;
+}
+function learnedCount(){ return Object.keys(S.cards).length; }
+function masteredCount(){
+  var n = 0;
+  for(var k in S.cards){ if(S.cards[k].s >= MAX_STAGE) n++; }
+  return n;
+}
+function checkinCount(){ return (S.checkinsList && S.checkinsList.length) || 0; }
+function hasCheckin(t){ return S.checkinsList.indexOf(t) !== -1; }
+function calcStreak(){
+  var set = {};
+  for(var i=0; i<S.checkinsList.length; i++) set[S.checkinsList[i]] = 1;
+  var d = new Date(), n = 0;
+  if(!set[dstr(d)]) d.setDate(d.getDate() - 1);
+  while(set[dstr(d)]){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function checkToday(){
+  var h = hist();
+  var due = dueCards().length;
+  if(h['new'] >= S.settings.dailyNew && due === 0){
+    var t = today();
+    if(S.checkinsList.indexOf(t) === -1){
+      S.checkinsList.push(t); S.checkinsList.sort(); save(); return true;
+    }
+  }
+  return false;
+}
+function shuffle(a){
+  var r = a.slice();
+  for(var i=r.length-1; i>0; i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = r[i]; r[i] = r[j]; r[j] = t;
+  }
+  return r;
+}
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg){
+  try {
+    var d = document.createElement('div');
+    d.className = 'toast'; d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 1900);
+  } catch(e){}
+}
+function greeting(){
+  var h = new Date().getHours(), g;
+  if(h < 6) g = '夜深了'; else if(h < 11) g = '早上好'; else if(h < 14) g = '中午好';
+  else if(h < 18) g = '下午好'; else g = '晚上好';
+  return g + '，' + PROFILE.name;
+}
+
+/* ==========================================================
+   六、双通道语音系统（防叠加版）
+   核心：
+   1. 全局播放令牌 SPEECH._token，每次新发音递增
+   2. stopAllSpeech() 一次性取消本地 TTS + 在线音频 + 定时器
+   3. 本地失败判定 1200ms，且检查 speaking/pending
+   ========================================================== */
+var SPEECH = {
+  supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
+  voice: null,
+  ready: false,
+  unlocked: false,
+  failCount: 0,
+  lastError: '',
+  _audio: null,
+  _token: 0,
+  _fallbackTimer: null
+};
+
+function pickVoice(){
+  try {
+    if(!SPEECH.supported) return;
+    var voices = window.speechSynthesis.getVoices();
+    if(!voices || voices.length === 0) return;
+    var enGB = null, enUS = null, anyEn = null;
+    for(var i=0; i<voices.length; i++){
+      var v = voices[i];
+      var lang = (v.lang || '').toLowerCase().replace('_','-');
+      if(lang === 'en-gb'){ enGB = enGB || v; }
+      else if(lang === 'en-us'){ enUS = enUS || v; }
+      else if(lang.indexOf('en') === 0){ anyEn = anyEn || v; }
+    }
+    SPEECH.voice = enGB || enUS || anyEn || null;
+    SPEECH.ready = true;
+  } catch(e){}
+}
+
+if(SPEECH.supported){
+  pickVoice();
+  try {
+    if(typeof window.speechSynthesis.onvoiceschanged !== 'undefined'){
+      window.speechSynthesis.onvoiceschanged = pickVoice;
+    }
+  } catch(e){}
+  var _vpCount = 0;
+  var _vpTimer = setInterval(function(){
+    _vpCount++;
+    pickVoice();
+    if(SPEECH.ready || _vpCount > 20) clearInterval(_vpTimer);
+  }, 250);
+}
+
+/* 全局停止：唯一入口 */
+function stopAllSpeech(){
+  SPEECH._token++;
+  if(SPEECH._fallbackTimer){
+    clearTimeout(SPEECH._fallbackTimer);
+    SPEECH._fallbackTimer = null;
+  }
+  try {
+    if(SPEECH.supported && window.speechSynthesis){
+      window.speechSynthesis.cancel();
+    }
+  } catch(e){}
+  if(SPEECH._audio){
+    try {
+      SPEECH._audio.pause();
+      SPEECH._audio.currentTime = 0;
+      SPEECH._audio.src = '';
+    } catch(e){}
+    SPEECH._audio = null;
+  }
+}
+
+/* iOS 手势解锁 */
+function unlockSpeech(){
+  if(SPEECH.unlocked || !SPEECH.supported) return;
+  SPEECH.unlocked = true;
+  try {
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0; u.rate = 2; u.pitch = 1;
+    if(SPEECH.voice) u.voice = SPEECH.voice;
+    window.speechSynthesis.speak(u);
+  } catch(e){}
+}
+document.addEventListener('touchstart', unlockSpeech, { once:true, passive:true });
+document.addEventListener('touchend',   unlockSpeech, { once:true, passive:true });
+document.addEventListener('click',      unlockSpeech, { once:true });
+
+/* 在线发音 */
+function playOnline(word, token){
+  if(!word) return;
+  if(SPEECH._token !== token) return;
+  try {
+    if(SPEECH._audio){
+      try { SPEECH._audio.pause(); } catch(e){}
+      SPEECH._audio = null;
+    }
+    var url = 'https://dict.youdao.com/dictvoice?audio=' +
+              encodeURIComponent(word) + '&type=1';
+    var audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = url;
+    audio.volume = 1;
+    SPEECH._audio = audio;
+    audio.onerror = function(){
+      if(SPEECH._token !== token) return;
+      SPEECH.lastError = 'online-error';
+      if(!playOnline._warned){ playOnline._warned = true; toast('在线发音失败，请检查网络'); }
+    };
+    var p = audio.play();
+    if(p && p.catch){
+      p.catch(function(){
+        if(SPEECH._token !== token) return;
+        SPEECH.lastError = 'online-blocked';
+        if(!playOnline._warned2){ playOnline._warned2 = true; toast('点击页面任意处后重试发音'); }
+      });
+    }
+  } catch(e){ SPEECH.lastError = 'online-exception'; }
+}
+
+/* 本地发音 */
+function speakLocal(text, token, onFail){
+  if(!SPEECH.supported){ if(onFail) onFail('unsupported'); return; }
+  try {
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-GB'; u.rate = 0.85; u.pitch = 1.05; u.volume = 1;
+    if(SPEECH.voice) u.voice = SPEECH.voice;
+    var started = false;
+    u.onstart = function(){
+      started = true;
+      if(SPEECH._fallbackTimer){
+        clearTimeout(SPEECH._fallbackTimer);
+        SPEECH._fallbackTimer = null;
+      }
+    };
+    u.onerror = function(ev){
+      if(SPEECH._token !== token) return;
+      SPEECH.lastError = (ev && ev.error) ? ev.error : 'unknown';
+      if(!started && onFail) onFail(SPEECH.lastError);
+    };
+    window.speechSynthesis.speak(u);
+    SPEECH._fallbackTimer = setTimeout(function(){
+      SPEECH._fallbackTimer = null;
+      if(SPEECH._token !== token) return;
+      if(started) return;
+      try {
+        if(window.speechSynthesis.speaking) return;
+        if(window.speechSynthesis.pending) return;
+      } catch(e){}
+      if(onFail) onFail('silent');
+    }, 1200);
+  } catch(e){
+    SPEECH.lastError = 'local-exception';
+    if(SPEECH._token === token && onFail) onFail('exception');
+  }
+}
+
+/* 核心分发 */
+function _doSpeak(text){
+  if(!text) return;
+  stopAllSpeech();
+  var myToken = SPEECH._token;
+  var channel = (S.settings && S.settings.voiceChannel) || 'auto';
+
+  if(channel === 'online'){ playOnline(text, myToken); return; }
+  if(channel === 'offline'){
+    if(!SPEECH.supported){ toast('此浏览器不支持本地语音，请切换「仅在线」'); return; }
+    speakLocal(text, myToken, function(err){
+      if(SPEECH._token !== myToken) return;
+      if(err === 'not-allowed') toast('请点击页面后重试');
+      else if(err === 'silent') toast('本地语音无响应，可到「我的」切换在线发音');
+    });
+    return;
+  }
+  if(SPEECH.supported){
+    speakLocal(text, myToken, function(err){
+      if(SPEECH._token !== myToken) return;
+      playOnline(text, myToken);
+      SPEECH.failCount++;
+      if(SPEECH.failCount === 3) toast('本地语音不可用，已自动使用在线发音');
+    });
+  } else {
+    playOnline(text, myToken);
+  }
+}
+
+function speakAuto(text){ if(!S.settings.autoSpeak) return; _doSpeak(text); }
+function speakManual(text){
+  pickVoice();
+  if(!SPEECH.unlocked){
+    unlockSpeech();
+    var myWord = text;
+    setTimeout(function(){ _doSpeak(myWord); }, 50);
+  } else {
+    _doSpeak(text);
+  }
+}
+
+/* ==========================================================
+   七、艾宾浩斯复习核心
+   ========================================================== */
+function onNewLearned(word){
+  var now = Date.now();
+  S.cards[word] = { s: 1, n: now + STAGE_INTERVALS[1] * DAY, t: now, lr: 0, rc: 0, wc: 0 };
+  if(S.spellMastered[word]) S.spellMastered[word] = true;
+  save();
+}
+function onReviewed(word, isKnow){
+  var c = S.cards[word];
+  if(!c) return;
+  var now = Date.now();
+  c.lr = now; c.rc = (c.rc || 0) + 1;
+  if(isKnow){ c.s = Math.min(c.s + 1, MAX_STAGE); }
+  else { c.wc = (c.wc || 0) + 1; c.s = Math.max(1, c.s - 2); }
+  c.n = now + STAGE_INTERVALS[c.s] * DAY;
+  save();
+}
+function onSpellFailed(word){
+  var c = S.cards[word];
+  if(!c) return;
+  c.s = 1; c.wc = (c.wc || 0) + 1;
+  c.n = Date.now() + STAGE_INTERVALS[1] * DAY;
+  save();
+}
+function forecastDays(n){
+  n = n || 7;
+  var result = [];
+  var today0 = new Date(); today0.setHours(0,0,0,0);
+  for(var i=0; i<n; i++){
+    var d = new Date(today0.getTime() + i*DAY);
+    var dEnd = new Date(d.getTime() + DAY);
+    var count = 0;
+    for(var k in S.cards){
+      var c = S.cards[k];
+      if(c.s > 0 && c.n >= d.getTime() && c.n < dEnd.getTime()) count++;
+    }
+    result.push({ date:d, count:count, isToday: i===0 });
+  }
+  return result;
+}
+function masteryStars(stage){
+  var n = 0;
+  if(stage >= 7) n = 5; else if(stage === 6) n = 4;
+  else if(stage === 5) n = 3; else if(stage === 4) n = 2;
+  else if(stage >= 1) n = 1;
+  var html = '<span class="mastery">';
+  for(var i=0; i<5; i++) html += '<span class="m-star' + (i < n ? ' on' : '') + '">&#x2B50;</span>';
+  html += '</span>';
+  return html;
+}
+function stagePill(stage){
+  if(stage < 1 || stage > 7) return '';
+  return '<span class="stage-pill s' + stage + '">' + STAGE_LABELS[stage] + '</span>';
+}
+
+/* ==========================================================
+   八、全局状态
+   ========================================================== */
+var currentTab = 'home';
+var session = null;
+var quiz = null;
+var wordQuery = '';
+var mainEl = null;
+
+/* ==========================================================
+   九、首页
+   ========================================================== */
+function renderHome(){
+  var h = hist();
+  var due = dueCards();
+  var dueCount = due.length;
+  var learned = learnedCount();
+  var daily = S.settings.dailyNew;
+  var newLeft = Math.max(0, daily - h['new']);
+  var finished = (h['new'] >= daily && dueCount === 0);
+
+  var starsHtml = '';
+  var starTotal = Math.min(daily + dueCount, 15);
+  var starOn = Math.min(h['new'] + h.rev, starTotal);
+  for(var i=0; i<starTotal; i++){
+    starsHtml += '<span class="star ' + (i < starOn ? 'on' : '') + '">&#x2B50;</span>';
+  }
+
+  var overdueCount = 0;
+  var now = Date.now();
+  for(var oi=0; oi<due.length; oi++){
+    var c = S.cards[due[oi].w];
+    if(c && now - c.n > DAY) overdueCount++;
+  }
+  var alertHtml = '';
+  if(dueCount > 0){
+    var alertMsg = overdueCount > 0
+      ? '有 ' + overdueCount + ' 个单词已经超过最佳复习时间啦，越快复习记得越牢！'
+      : '这 ' + dueCount + ' 个单词正处于最佳复习窗口期，现在复习效果最好！';
+    alertHtml = '<div class="review-alert">' +
+      '<div class="ra-icon">&#x23F0;</div>' +
+      '<div class="ra-text"><div class="ra-title">今日复习提醒</div><div class="ra-sub">' + alertMsg + '</div></div>' +
+      '<div class="ra-count">' + dueCount + '</div>' +
+    '</div>';
+  }
+
+  var daysHtml = '';
+  var week = ['日','一','二','三','四','五','六'];
+  for(var k=6; k>=0; k--){
+    var d = new Date();
+    d.setDate(d.getDate() - k);
+    var ds = dstr(d);
+    var on = hasCheckin(ds);
+    var isToday = (k === 0);
+    daysHtml += '<div class="day"><div class="dot ' + (on?'on':'') + ' ' + (isToday?'today':'') + '">' +
+      (on ? '&#x2713;' : '') + '</div><small>' + week[d.getDay()] + '</small></div>';
+  }
+
+  var forecast = forecastDays(7);
+  var forecastHtml = '';
+  var fweek = ['日','一','二','三','四','五','六'];
+  for(var fi=0; fi<forecast.length; fi++){
+    var f = forecast[fi];
+    var cls = f.count === 0 ? 'fc-num zero' : 'fc-num';
+    var itemCls = f.isToday ? 'fc-item today' : 'fc-item';
+    forecastHtml += '<div class="' + itemCls + '">' +
+      '<div class="fc-day">' + (f.isToday ? '今天' : fweek[f.date.getDay()]) + '</div>' +
+      '<div class="' + cls + '">' + f.count + '</div>' +
+    '</div>';
+  }
+
+  var continueBtn = '';
+  if(session && !session.done){
+    var leftCount = session.queue.length - session.idx;
+    continueBtn = '<button class="btn ghost" onclick="PET.continueSession()">继续上次的学习（还剩 ' + leftCount + ' 个）</button>';
+  }
+
+  var mainBtn;
+  if(finished){
+    mainBtn = '<button class="btn" onclick="PET.startSession()">再练一轮</button>';
+  } else if(dueCount > 0 && newLeft > 0){
+    mainBtn = '<button class="btn review" onclick="PET.startReview()">先复习 ' + dueCount + ' 个（推荐）</button>' +
+              '<button class="btn" onclick="PET.startNew()">再学 ' + newLeft + ' 个新词</button>';
+  } else if(dueCount > 0){
+    mainBtn = '<button class="btn review" onclick="PET.startReview()">开始复习 ' + dueCount + ' 个单词</button>';
+  } else if(newLeft > 0){
+    mainBtn = '<button class="btn" onclick="PET.startNew()">学习 ' + newLeft + ' 个新词</button>';
+  } else {
+    mainBtn = '<button class="btn" onclick="PET.startSession()">继续学习</button>';
+  }
+
+  return '' +
+    '<div class="hero">' +
+      '<div class="hero-row">' +
+        '<div class="hero-emoji">' + (finished ? '&#x1F389;' : '&#x1F4DA;') + '</div>' +
+        '<div style="min-width:0">' +
+          '<div class="hero-title">' + escHtml(greeting()) + '！</div>' +
+          '<div class="hero-sub">' + (finished ? '今天的任务全部完成啦！' : '按艾宾浩斯曲线，及时复习记得更牢～') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="stars-row">' + starsHtml + '</div>' +
+      '<div class="hero-stats">' +
+        '<div><b>' + h['new'] + ' / ' + daily + '</b><small>今日新词</small></div>' +
+        '<div><b>' + dueCount + '</b><small>待复习</small></div>' +
+      '</div>' +
+    '</div>' +
+    alertHtml +
+    mainBtn +
+    continueBtn +
+    '<div class="stat-grid">' +
+      '<div class="stat"><b>' + calcStreak() + '</b><small>连续打卡</small></div>' +
+      '<div class="stat"><b>' + learned + '</b><small>已学单词</small></div>' +
+      '<div class="stat"><b>' + masteredCount() + '</b><small>已精通</small></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<b style="font-size:14px">最近 7 天打卡</b>' +
+        '<span class="muted small">累计 ' + checkinCount() + ' 天</span>' +
+      '</div>' +
+      '<div class="week">' + daysHtml + '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:14px">&#x1F4C5; 未来 7 天复习量</b>' +
+      '<p class="muted small" style="margin:4px 0 0">按遗忘曲线自动安排，数字是当天需要复习的单词数</p>' +
+      '<div class="forecast">' + forecastHtml + '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px">' +
+        '<span>词库总进度</span><span class="muted">' + learned + ' / ' + TOTAL_WORDS + '</span>' +
+      '</div>' +
+      '<div class="bar" style="margin-bottom:0"><i style="width:' + (learned/TOTAL_WORDS*100).toFixed(1) + '%"></i></div>' +
+      '<p class="muted small" style="margin:10px 0 0">还有 ' + (TOTAL_WORDS - learned) + ' 个 PET 单词等你解锁</p>' +
+    '</div>';
+}
+
+/* ==========================================================
+   十、会话
+   ========================================================== */
+function makeQueue(mode){
+  var h = hist();
+  var queue = [];
+  var due = shuffle(dueCards());
+  if(mode === 'review' || mode === 'all'){
+    for(var i=0; i<due.length; i++) queue.push({
+      o: due[i], isReview: true, isNew: false, requeued: false, spellTries: 0, spellOk: true
+    });
+  }
+  if(mode === 'new' || mode === 'all'){
+    var newLeft = Math.max(0, S.settings.dailyNew - h['new']);
+    var fresh = newWordList().slice(0, newLeft);
+    for(var j=0; j<fresh.length; j++) queue.push({
+      o: fresh[j], isReview: false, isNew: true, requeued: false, spellTries: 0, spellOk: false
+    });
+  }
+  return queue;
+}
+function startSession(){ startSessionMode('all'); }
+function startReview(){ startSessionMode('review'); }
+function startNew(){ startSessionMode('new'); }
+function startSessionMode(mode){
+  if(session && !session.done && session.mode === mode){
+    currentTab = 'learn'; updateTabs(); render(true); return;
+  }
+  var queue = makeQueue(mode);
+  if(queue.length === 0){ toast('暂时没有需要学习的单词～'); return; }
+  session = {
+    mode: mode, queue: queue, idx: 0, done: false, checked: false, phase: 'ask',
+    stats: { know:0, no:0, spellOK:0, spellFail:0, reviewKnow:0, reviewNo:0 },
+    counted: {}
+  };
+  currentTab = 'learn';
+  updateTabs();
+  render(true);
+  var firstWord = session.queue[0] ? session.queue[0].o.w : null;
+  if(S.settings.autoSpeak && firstWord) speakAuto(firstWord);
+}
+function flipCard(){
+  if(!session || session.done) return;
+  var el = document.querySelector('.flash-card');
+  if(el) el.classList.toggle('flipped');
+}
+function answerSession(rating){
+  if(!session || session.done || session.phase !== 'ask') return;
+  var item = session.queue[session.idx];
+  var w = item.o.w;
+
+  if(item.isReview){
+    onReviewed(w, rating === 'know');
+    if(rating === 'know'){ session.stats.reviewKnow++; }
+    else {
+      session.stats.reviewNo++;
+      if(!item.requeued){ item.requeued = true; session.queue.push(item); }
+    }
+    if(!session.counted[w]){
+      session.counted[w] = 1;
+      var h1 = hist(); h1.rev++;
+    }
+    advance();
+    return;
+  }
+
+  if(!session.counted[w]){
+    session.counted[w] = 1;
+    var h2 = hist(); h2['new']++;
+  }
+
+  if(rating === 'no'){
+    session.stats.no++;
+    if(!item.requeued){ item.requeued = true; session.queue.push(item); }
+    if(S.cards[w]){
+      var c = S.cards[w];
+      c.s = 1; c.wc = (c.wc || 0) + 1;
+      c.n = Date.now() + STAGE_INTERVALS[1] * DAY;
+      save();
+    }
+    advance();
+    return;
+  }
+
+  session.stats.know++;
+  if(!item.spellOk){
+    session.phase = 'spelling';
+    item.spellTries = 0;
+    save();
+    render(true);
+    speakManual(w);
+    return;
+  }
+  onNewLearned(w);
+  advance();
+}
+function submitSpelling(){
+  if(!session || session.phase !== 'spelling') return;
+  var item = session.queue[session.idx];
+  var inputEl = document.getElementById('spellInput');
+  if(!inputEl) return;
+  var raw = (inputEl.value || '').trim();
+  if(!raw){ toast('先写下答案吧～'); return; }
+  var target = item.o.w.toLowerCase().replace(/\s+/g,' ').trim();
+  var guess  = raw.toLowerCase().replace(/\s+/g,' ').trim();
+  item.spellTries++;
+  if(guess === target){
+    item.spellOk = true;
+    if(item.spellTries === 1){
+      S.spellMastered[item.o.w] = true;
+      onNewLearned(item.o.w);
+      session.stats.spellOK++;
+      session.phase = 'spell-ok';
+      render(true); save();
+    } else {
+      if(S.spellMastered[item.o.w]) delete S.spellMastered[item.o.w];
+      onSpellFailed(item.o.w);
+      session.stats.spellFail++;
+      session.phase = 'spell-fail';
+      render(true); save();
+    }
+    return;
+  }
+  inputEl.classList.add('bad');
+  inputEl.classList.remove('ok');
+  if(item.spellTries >= SPELL_MAX_TRIES){
+    if(S.spellMastered[item.o.w]) delete S.spellMastered[item.o.w];
+    onSpellFailed(item.o.w);
+    session.stats.spellFail++;
+    session.phase = 'spell-fail';
+    render(true); save();
+    return;
+  }
+  var fbEl = document.getElementById('spellFeedback');
+  if(fbEl){
+    fbEl.className = 'spell-feedback bad';
+    fbEl.textContent = '再想一想，还剩 ' + (SPELL_MAX_TRIES - item.spellTries) + ' 次机会';
+  }
+  try { inputEl.focus(); } catch(e){}
+}
+function spellKeydown(e){
+  if(e.key === 'Enter' || e.keyCode === 13){ e.preventDefault(); submitSpelling(); }
+}
+function nextAfterSpellOK(){ if(!session) return; session.phase = 'ask'; advance(); }
+function retryAfterSpellFail(){
+  if(!session) return;
+  var item = session.queue[session.idx];
+  item.spellTries = 0; item.spellOk = false; item.requeued = true;
+  session.queue.push(item);
+  session.phase = 'ask';
+  advance();
+}
+function advance(){
+  if(!session) return;
+  session.idx++;
+  session.phase = 'ask';
+  if(session.idx >= session.queue.length){
+    session.done = true;
+    session.checked = checkToday();
+  }
+  save();
+  render(true);
+  if(session && !session.done && S.settings.autoSpeak){
+    var it = session.queue[session.idx];
+    if(it) speakAuto(it.o.w);
+  }
+}
+function exitSession(){
+  currentTab = 'home'; updateTabs(); render(true);
+  toast('进度已保留，随时可以继续～');
+}
+function backHome(){ session = null; currentTab = 'home'; updateTabs(); render(true); }
+function continueSession(){
+  if(session && !session.done){
+    currentTab = 'learn'; updateTabs(); render(true);
+    if(session.phase === 'spelling'){
+      var si = document.getElementById('spellInput');
+      if(si) setTimeout(function(){ try { si.focus(); } catch(e){} }, 200);
+    }
+    return;
+  }
+  session = null; startSession();
+}
+
+/* ==========================================================
+   十一、学习页
+   ========================================================== */
+function renderLearn(){
+  if(!session){
+    var h = hist();
+    var due = dueCards().length;
+    var newLeft = Math.max(0, S.settings.dailyNew - h['new']);
+    var learned = learnedCount();
+    var pct = (learned / TOTAL_WORDS * 100).toFixed(1);
+    return '' +
+      '<div class="card center">' +
+        '<div class="big-emoji">&#x1F4DA;</div>' +
+        '<h2>今日学习计划</h2>' +
+        '<p class="muted">新词 <b style="color:#0D9488">' + newLeft + '</b> 个 · ' +
+          '复习 <b style="color:#F97316">' + due + '</b> 个</p>' +
+        '<div class="bar" style="margin-top:16px"><i style="width:' + pct + '%"></i></div>' +
+        '<p class="muted small" style="margin:0">词库进度 ' + learned + ' / ' + TOTAL_WORDS + '</p>' +
+      '</div>' +
+      (due > 0 ? '<button class="btn review" onclick="PET.startReview()">复习 ' + due + ' 个单词</button>' : '') +
+      (newLeft > 0 ? '<button class="btn" onclick="PET.startNew()">学习 ' + newLeft + ' 个新词</button>' : '') +
+      '<div class="card tip">' +
+        '<b>艾宾浩斯复习机制</b>' +
+        '<p>单词按 1、2、4、7、15、30、60 天的间隔逐步拉长复习。认识就升一级，不认识就降级重学。全部通过 7 个阶段后就是"精通"啦！</p>' +
+      '</div>';
+  }
+  if(session.done) return renderLearnEnd();
+
+  var item = session.queue[session.idx];
+  if(!item) return '<div class="card center"><p class="muted">加载中…</p></div>';
+  var o = item.o;
+  var total = session.queue.length;
+  var pos = session.idx;
+  var c = S.cards[o.w];
+  var curStage = c ? c.s : 0;
+
+  var top = '' +
+    '<div class="learn-top">' +
+      '<span>第 ' + (pos+1) + ' / ' + total + ' 个' +
+        (item.isReview ? '<span class="review-badge">复习</span>' : '<span class="spell-badge">新词</span>') +
+      '</span>' +
+      '<span>' + (session.mode === 'review' ? '复习模式' : session.mode === 'new' ? '新词模式' : '混合模式') + '</span>' +
+    '</div>' +
+    '<div class="bar"><i style="width:' + (pos/total*100).toFixed(1) + '%"></i></div>';
+
+  if(session.phase === 'ask'){
+    var stagePillHtml = curStage > 0 ? stagePill(curStage) : '';
+    var answerHtml = '' +
+      '<div class="answer-row">' +
+        '<button class="ans-btn ans-no" onclick="PET.answerSession(\'no\')">' +
+          '<span class="ans-emoji">&#x1F914;</span><span>不认识</span>' +
+        '</button>' +
+        '<button class="ans-btn ans-yes" onclick="PET.answerSession(\'know\')">' +
+          '<span class="ans-emoji">&#x1F604;</span><span>认识</span>' +
+        '</button>' +
+      '</div>';
+    return top +
+      '<div class="flash-card" onclick="PET.flipCard()">' +
+        '<div class="flash-inner">' +
+          '<div class="flash-face flash-front">' +
+           '<div class="flash-tag">' + o.emoji + ' ' + escHtml(o.cat) + '</div>' +
+           '<div class="level-tag ' + (o.level === 'pet' ? 'pet' : 'basic') + '">' +
+             (o.level === 'pet' ? 'PET' : '基础') + '</div>' +
+           (stagePillHtml ? '<div class="flash-stage">' + stagePillHtml + '</div>' : '') +
+           '<button class="sound-btn" onclick="event.stopPropagation();PET.speakManual(\'' + escAttr(o.w) + '\')">&#x1F50A;</button>' +
+         '<div class="flash-word">' + escHtml(o.w) + '</div>' +
+           '<div class="flash-hint">点我看中文</div>' +
+          '</div>' +
+         '<div class="flash-face flash-back">' +
+          '<div class="flash-tag">' + o.emoji + ' ' + escHtml(o.cat) + '</div>' +
+          '<div class="level-tag ' + (o.level === 'pet' ? 'pet' : 'basic') + '">' +
+           (o.level === 'pet' ? 'PET' : '基础') + '</div>' +
+          '<button class="sound-btn" onclick="event.stopPropagation();PET.speakManual(\'' + escAttr(o.w) + '\')">&#x1F50A;</button>' +
+          '<div class="flash-cn">' + escHtml(o.z) + '</div>' +
+          (o.pos ? '<div style="font-size:14px;color:rgba(255,255,255,.85);margin-top:6px;font-weight:700">' + escHtml(o.pos) + '</div>' : '') +
+          '<div class="flash-hint">' + (item.isReview ? '凭记忆选认识/不认识' : '再点一下翻回去') + '</div>' +
+         '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="answerArea">' + answerHtml + '</div>' +
+      '<button class="btn ghost" onclick="PET.exitSession()">先休息一下</button>';
+  }
+  if(session.phase === 'spelling'){
+    var triesHtml = '';
+    for(var t=0; t<SPELL_MAX_TRIES; t++){
+      triesHtml += '<span class="dot-try' + (t < item.spellTries ? ' used' : '') + '"></span>';
+    }
+    return top +
+      '<div class="spell-wrap">' +
+        '<div class="spell-title">&#x270F;&#xFE0F; 拼写挑战（一次拼对才算掌握）</div>' +
+        '<div class="spell-cn">' + escHtml(o.z) + '</div>' +
+        '<div class="spell-hint-line">看中文，把英文拼出来</div>' +
+        '<div class="spell-input-wrap">' +
+          '<input type="text" id="spellInput" class="spell-input" maxlength="40" ' +
+            'placeholder="在这里拼写…" autocomplete="off" autocorrect="off" ' +
+            'autocapitalize="off" spellcheck="false" onkeydown="PET.spellKeydown(event)">' +
+          '<button class="spell-speak" onclick="PET.speakManual(\'' + escAttr(o.w) + '\')">&#x1F50A;</button>' +
+        '</div>' +
+        '<div class="spell-tries">' + triesHtml + '</div>' +
+        '<div class="spell-feedback" id="spellFeedback"></div>' +
+        '<button class="btn" onclick="PET.submitSpelling()">提交答案</button>' +
+      '</div>' +
+      '<button class="btn ghost" onclick="PET.exitSession()">先休息一下</button>';
+  }
+  if(session.phase === 'spell-ok'){
+    return top +
+      '<div class="spell-result">' +
+        '<div class="sr-emoji">&#x1F31F;</div>' +
+        '<h3>太棒了！一次拼对！</h3>' +
+        '<div class="sr-word">' + escHtml(o.w) + '</div>' +
+        '<div class="sr-cn">' + escHtml(o.z) + '</div>' +
+        '<p style="margin-top:14px">进入复习阶段 1，明天会提醒你复习～</p>' +
+      '</div>' +
+      '<button class="btn" onclick="PET.nextAfterSpellOK()">下一个</button>' +
+      '<button class="btn ghost" onclick="PET.exitSession()">先休息一下</button>';
+  }
+  if(session.phase === 'spell-fail'){
+    return top +
+      '<div class="spell-result">' +
+        '<div class="sr-emoji">&#x1F4AA;</div>' +
+        '<h3>没关系，再来一次！</h3>' +
+        '<div class="sr-word">' + escHtml(o.w) + '</div>' +
+        '<div class="sr-cn">' + escHtml(o.z) + '</div>' +
+        '<p style="margin-top:14px">这个单词要重新学一遍，下次一次拼对才算掌握～</p>' +
+      '</div>' +
+      '<button class="btn" onclick="PET.retryAfterSpellFail()">重新学习这个单词</button>' +
+      '<button class="btn ghost" onclick="PET.exitSession()">先休息一下</button>';
+  }
+  return top + '<div class="card center"><p class="muted">加载中…</p></div>';
+}
+function renderLearnEnd(){
+  var s = session.stats;
+  var checked = session.checked;
+  var counted = Object.keys(session.counted).length;
+  return '' +
+    '<div class="card center">' +
+      '<div class="big-emoji">' + (checked ? '&#x1F389;' : '&#x2705;') + '</div>' +
+      '<h2>' + (checked ? '打卡成功！' : '本轮学习完成') + '</h2>' +
+      '<p class="muted">' + (checked
+        ? escHtml(PROFILE.name) + '，连续打卡 ' + calcStreak() + ' 天，你太棒啦！'
+        : '继续保持，随时回来复习～') + '</p>' +
+      '<div class="result-grid">' +
+        '<div><b>' + s.reviewKnow + '</b><small>复习会</small></div>' +
+        '<div><b>' + s.reviewNo + '</b><small>复习忘</small></div>' +
+        '<div><b>' + s.spellOK + '</b><small>新词拼对</small></div>' +
+      '</div>' +
+      '<p class="muted small" style="margin-top:14px">本轮共学习 ' + counted + ' 个单词</p>' +
+    '</div>' +
+    '<button class="btn" onclick="PET.backHome()">返回首页</button>' +
+    '<button class="btn ghost" onclick="PET.continueSession()">继续学习</button>';
+}
+
+/* ==========================================================
+   十二、测验
+   ========================================================== */
+function startQuiz(){
+  var learned = [];
+  for(var i=0; i<WORDS.length; i++){ if(S.cards[WORDS[i].w]) learned.push(WORDS[i]); }
+  if(learned.length < 4){ toast('至少先学 4 个单词才能开始测验哦～'); return; }
+  var pool = shuffle(learned).slice(0, Math.min(10, learned.length));
+  var qs = [];
+  for(var k=0; k<pool.length; k++){
+    var o = pool[k];
+    var same = [], other = [];
+    for(var i2=0; i2<WORDS.length; i2++){
+      if(WORDS[i2].w === o.w) continue;
+      if(WORDS[i2].cat === o.cat) same.push(WORDS[i2]); else other.push(WORDS[i2]);
+    }
+    same = shuffle(same); other = shuffle(other);
+    var distract = [], merged = same.concat(other);
+    for(var j=0; j<merged.length; j++){
+      if(distract.length >= 3) break;
+      var dup = false;
+      for(var d=0; d<distract.length; d++) if(distract[d].w === merged[j].w){ dup = true; break; }
+      if(!dup) distract.push(merged[j]);
+    }
+    var opts = shuffle([o].concat(distract));
+    var ansIdx = 0;
+    for(var a=0; a<opts.length; a++) if(opts[a].w === o.w){ ansIdx = a; break; }
+    qs.push({ o:o, opts:opts, ans:ansIdx });
+  }
+  quiz = { qs:qs, idx:0, correct:0, chosen:-1, revealed:false, finished:false };
+  currentTab = 'quiz'; updateTabs(); render(true);
+}
+function answerQuiz(i){
+  if(!quiz || quiz.revealed) return;
+  quiz.chosen = i; quiz.revealed = true;
+  if(i === quiz.qs[quiz.idx].ans) quiz.correct++;
+  render();
+}
+function nextQuiz(){
+  if(!quiz) return;
+  quiz.idx++; quiz.chosen = -1; quiz.revealed = false;
+  if(quiz.idx >= quiz.qs.length){
+    var h = hist();
+    h.quizC += quiz.correct; h.quizT += quiz.qs.length;
+    save(); quiz.finished = true;
+  }
+  render();
+}
+function exitQuiz(){ quiz = null; render(true); }
+function renderQuiz(){
+  if(!quiz){
+    var learned = learnedCount();
+    var h = hist();
+    var rate = h.quizT ? Math.round(h.quizC / h.quizT * 100) : 0;
+    return '' +
+      '<div class="card center">' +
+        '<div class="big-emoji">&#x1F3AF;</div>' +
+        '<h2>PET 单词小测验</h2>' +
+        '<p class="muted">从学过的 ' + learned + ' 个单词里随机抽 10 个</p>' +
+        '<div class="stat-grid" style="margin-top:18px;margin-bottom:0">' +
+          '<div class="stat"><b>' + h.quizT + '</b><small>今日答题</small></div>' +
+          '<div class="stat"><b>' + h.quizC + '</b><small>答对</small></div>' +
+          '<div class="stat"><b>' + rate + '%</b><small>正确率</small></div>' +
+        '</div>' +
+      '</div>' +
+      '<button class="btn" onclick="PET.startQuiz()">开始测验</button>' +
+      '<div class="card tip">' +
+        '<b>小提示</b>' +
+        '<p>答错的单词，在之后的复习中会更频繁地出现，多练几次就记住啦！</p>' +
+      '</div>';
+  }
+  if(quiz.finished){
+    var n = quiz.qs.length, c = quiz.correct, r2 = Math.round(c/n*100);
+    var emoji = '&#x1F4AA;', msg = '继续加油，你可以的！';
+    if(r2 >= 90){ emoji = '&#x1F3C6;'; msg = '太厉害了，几乎全对！'; }
+    else if(r2 >= 70){ emoji = '&#x1F389;'; msg = '很棒，PET 词汇掌握得不错！'; }
+    else if(r2 >= 50){ emoji = '&#x1F44D;'; msg = '还不错，再复习一下会更好～'; }
+    return '' +
+      '<div class="card center">' +
+        '<div class="big-emoji">' + emoji + '</div>' +
+        '<h2>' + c + ' / ' + n + ' 题正确</h2>' +
+        '<p class="muted">' + msg + '（正确率 ' + r2 + '%）</p>' +
+      '</div>' +
+      '<button class="btn" onclick="PET.startQuiz()">再测一次</button>' +
+      '<button class="btn ghost" onclick="PET.exitQuiz()">返回</button>';
+  }
+  var q = quiz.qs[quiz.idx];
+  var optsHtml = '';
+  for(var i=0; i<q.opts.length; i++){
+    var op = q.opts[i];
+    var cls = '';
+    if(quiz.revealed){
+      if(i === q.ans) cls = 'right';
+      else if(i === quiz.chosen) cls = 'wrong';
+    }
+    optsHtml += '<button class="opt ' + cls + '" ' + (quiz.revealed ? 'disabled' : '') +
+      ' onclick="PET.answerQuiz(' + i + ')">' +
+      '<span class="k">' + 'ABCD'[i] + '</span>' +
+      '<span>' + escHtml(op.z) + '</span>' +
+    '</button>';
+  }
+  return '' +
+    '<div class="bar"><i style="width:' + (quiz.idx/quiz.qs.length*100).toFixed(1) + '%"></i></div>' +
+    '<div class="learn-top">' +
+      '<span>第 ' + (quiz.idx+1) + ' / ' + quiz.qs.length + ' 题</span>' +
+      '<span>已答对 ' + quiz.correct + ' 题</span>' +
+    '</div>' +
+    '<div class="card" style="margin-top:12px">' +
+      '<p class="muted small" style="text-align:center;margin:0 0 4px">选出正确的中文意思</p>' +
+      '<div class="q-word">' + escHtml(q.o.w) + '</div>' +
+      '<div style="text-align:center;margin-bottom:18px">' +
+        '<button class="icon-btn" style="width:42px;height:42px;font-size:18px;display:inline-grid" ' +
+          'onclick="PET.speakManual(\'' + escAttr(q.o.w) + '\')">&#x1F50A;</button>' +
+      '</div>' +
+      optsHtml +
+    '</div>' +
+    (quiz.revealed
+      ? '<button class="btn" onclick="PET.nextQuiz()">' +
+          (quiz.idx + 1 >= quiz.qs.length ? '查看结果' : '下一题') + '</button>'
+      : '') +
+    '<button class="btn ghost" onclick="PET.exitQuiz()">退出测验</button>';
+}
+
+/* ==========================================================
+   十三、词库
+   ========================================================== */
+function renderWords(){
+  return '' +
+    '<div class="search-wrap">' +
+      '<input id="searchInput" placeholder="搜索英文或中文…" value="' + escAttr(wordQuery) + '" oninput="PET.onSearch(this)">' +
+    '</div>' +
+    '<div id="wordList"></div>';
+}
+function onSearch(el){ wordQuery = el.value.trim(); updateWordList(); }
+function updateWordList(){
+  var el = document.getElementById('wordList');
+  if(!el) return;
+  var q = wordQuery.toLowerCase();
+  var now = Date.now();
+  var html = '', cnt = 0;
+  for(var i=0; i<WORDS.length; i++){
+    var o = WORDS[i];
+    if(q && o.w.toLowerCase().indexOf(q) === -1 && o.z.indexOf(q) === -1) continue;
+    var c = S.cards[o.w];
+    var cls = 'new', label = '未学';
+    var stageHtml = '';
+    if(c){
+      if(c.s >= MAX_STAGE){ cls = 'mastered'; label = '精通'; }
+      else { cls = 'learning'; label = STAGE_LABELS[c.s] || '学习中'; }
+      stageHtml = ' ' + stagePill(c.s);
+      if(c.n <= now && c.s > 0){ cls = 'review'; label = '待复习'; }
+    }
+    html += '<div class="word-row">' +
+      '<div style="min-width:0">' +
+        '<div class="wr-w">' + o.emoji + ' ' + escHtml(o.w) + '</div>' +
+        '<div class="wr-z">' + escHtml(o.z) + stageHtml + '</div>' +
+      '</div>' +
+      '<div class="wr-right">' +
+        masteryStars(c ? c.s : 0) +
+        '<span class="badge ' + cls + '">' + label + '</span>' +
+        '<button class="icon-btn" onclick="PET.speakManual(\'' + escAttr(o.w) + '\')">&#x1F50A;</button>' +
+      '</div>' +
+    '</div>';
+    cnt++;
+  }
+  if(cnt === 0){
+    el.innerHTML = '<p class="muted" style="text-align:center;padding:30px 0">没有找到匹配的单词</p>';
+  } else { el.innerHTML = html; }
+}
+
+/* ==========================================================
+   十四、我的
+   ========================================================== */
+function renderMe(){
+  var learned = learnedCount();
+  var mastered = masteredCount();
+  var learning = learned - mastered;
+  var opts = [10, 15, 20, 25];
+  var segHtml = '';
+  for(var i=0; i<opts.length; i++){
+    var n = opts[i];
+    segHtml += '<button class="' + (S.settings.dailyNew === n ? 'on' : '') + '" onclick="PET.setDaily(' + n + ')">' + n + '</button>';
+  }
+  var stageDist = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0 };
+  for(var k in S.cards){
+    var s = S.cards[k].s;
+    if(s >= 1 && s <= 7) stageDist[s]++;
+  }
+  var stageRows = '';
+  for(var si=1; si<=7; si++){
+    stageRows += '<div class="row"><span>' + stagePill(si) + ' ' + STAGE_LABELS[si] + '（间隔 ' + STAGE_INTERVALS[si] + ' 天）</span><b>' + stageDist[si] + ' 个</b></div>';
+  }
+  var vc = S.settings.voiceChannel || 'auto';
+  return '' +
+    '<div class="card center" style="padding-bottom:14px">' +
+      '<div style="font-size:52px;line-height:1;margin-bottom:6px">' + escHtml(PROFILE.avatar || DEFAULT_AVATAR) + '</div>' +
+      '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + escHtml(PROFILE.name) + '</div>' +
+      '<p class="muted small" style="margin:4px 0 14px">这是我的 PET 学习档案</p>' +
+      '<button class="btn small" style="max-width:200px;margin:0 auto" onclick="PET.openNameModal()">修改名字和头像</button>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">每天学几个新词？</b>' +
+      '<p class="muted small" style="margin:6px 0 0">PET 难度更高，建议 10-15 个</p>' +
+      '<div class="seg">' + segHtml + '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">自动朗读</b>' +
+      '<p class="muted small" style="margin:6px 0 0">出现新单词时自动读一遍英文</p>' +
+      '<div class="seg">' +
+        '<button class="' + (S.settings.autoSpeak ? 'on' : '') + '" onclick="PET.setSpeak(true)">打开</button>' +
+        '<button class="' + (!S.settings.autoSpeak ? 'on' : '') + '" onclick="PET.setSpeak(false)">关闭</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">发音通道</b>' +
+      '<p class="muted small" style="margin:6px 0 0">本地语音不用网络但手机可能被拦截；在线发音更稳定但需要联网</p>' +
+      '<div class="seg">' +
+        '<button class="' + (vc === 'auto' ? 'on' : '') + '" onclick="PET.setVoiceChannel(\'auto\')">自动</button>' +
+        '<button class="' + (vc === 'offline' ? 'on' : '') + '" onclick="PET.setVoiceChannel(\'offline\')">本地</button>' +
+        '<button class="' + (vc === 'online' ? 'on' : '') + '" onclick="PET.setVoiceChannel(\'online\')">在线</button>' +
+      '</div>' +
+      '<button class="btn small" style="margin-top:10px" onclick="PET.testSpeech()">&#x1F50A; 测试发音</button>' +
+      '<p class="muted small" style="margin:10px 0 0" id="speechStatus"></p>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">我的成绩单</b>' +
+      '<div class="row"><span>词库总量</span><b>' + TOTAL_WORDS + ' 个</b></div>' +
+      '<div class="row"><span>已学单词</span><b>' + learned + ' 个</b></div>' +
+      '<div class="row"><span>已精通</span><b>' + mastered + ' 个</b></div>' +
+      '<div class="row"><span>学习中</span><b>' + learning + ' 个</b></div>' +
+      '<div class="row"><span>累计打卡</span><b>' + checkinCount() + ' 天</b></div>' +
+      '<div class="row"><span>连续打卡</span><b>' + calcStreak() + ' 天</b></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">&#x1F4CA; 艾宾浩斯阶段分布</b>' +
+      '<p class="muted small" style="margin:6px 0 6px">按遗忘曲线，单词逐步从新学走向精通</p>' +
+      stageRows +
+    '</div>' +
+    '<div class="card">' +
+      '<b style="font-size:15px">数据管理</b>' +
+      '<p class="muted small" style="margin:8px 0 14px">学习记录保存在本机浏览器里，换设备或清理浏览器数据会丢失哦。</p>' +
+      '<button class="btn ghost" onclick="PET.resetAll()" style="color:#C2410C;border-color:#FED7AA;box-shadow:0 4px 0 #FFEDD5">清空全部学习记录</button>' +
+    '</div>' +
+    '<p class="muted small" style="text-align:center;padding:4px 0 12px">PET 单词乐园 · 祝你考试顺利</p>';
+}
+function setDaily(n){ S.settings.dailyNew = n; save(); render(); }
+function setSpeak(v){ S.settings.autoSpeak = v; save(); render(); }
+function setVoiceChannel(ch){ S.settings.voiceChannel = ch; save(); render(); }
+function testSpeech(){
+  unlockSpeech(); pickVoice();
+  var statusEl = document.getElementById('speechStatus');
+  var ch = S.settings.voiceChannel || 'auto';
+  var msg = '';
+  if(ch === 'online'){ msg = '&#x1F310; 正在使用在线发音（有道词典）'; }
+  else if(!SPEECH.supported){ msg = '&#x26A0;&#xFE0F; 本地语音不支持，将自动使用在线发音'; }
+  else if(!SPEECH.voice){ msg = '&#x26A0;&#xFE0F; 未找到英文语音包，可切换「在线」'; }
+  else { msg = '&#x2705; 本地语音：' + SPEECH.voice.name + ' (' + SPEECH.voice.lang + ')'; }
+  if(statusEl) statusEl.innerHTML = msg;
+  _doSpeak('Hello, this is a test.');
+}
+function resetAll(){
+  if(!window.confirm('确定要清空全部学习记录吗？此操作不可恢复。')) return;
+  if(!window.confirm('再确认一次：真的要清空吗？')) return;
+  S = blankState(); session = null; quiz = null; save(); render(true);
+  toast('已清空学习记录');
+}
+
+/* ==========================================================
+   十五、路由
+   ========================================================== */
+var VIEWS = { home:renderHome, learn:renderLearn, quiz:renderQuiz, words:renderWords, me:renderMe };
+function render(resetScroll){
+  if(!mainEl) mainEl = document.getElementById('main');
+  if(!mainEl) return;
+  try {
+    mainEl.innerHTML = VIEWS[currentTab]();
+    if(currentTab === 'words') updateWordList();
+    if(resetScroll) mainEl.scrollTop = 0;
+    var badge = document.getElementById('streakBadge');
+    if(badge) badge.textContent = '连续 ' + calcStreak() + ' 天';
+    updateUserDisplay();
+    if(currentTab === 'learn' && session && session.phase === 'spelling'){
+      var si = document.getElementById('spellInput');
+      if(si) setTimeout(function(){ try { si.focus(); } catch(e){} }, 200);
+    }
+  } catch(err){
+    mainEl.innerHTML = '<div class="card center">' +
+      '<div class="big-emoji">&#x1F62E;</div>' +
+      '<h2>页面出错了</h2>' +
+      '<p class="muted">请下拉刷新页面重试</p>' +
+      '<p class="muted small">' + escHtml(err && err.message ? err.message : '未知错误') + '</p>' +
+    '</div>';
+  }
+}
+function updateTabs(){
+  var btns = document.querySelectorAll('.tabbar button');
+  for(var i=0; i<btns.length; i++){
+    var b = btns[i];
+    if(b.getAttribute('data-tab') === currentTab) b.classList.add('active');
+    else b.classList.remove('active');
+  }
+}
+
+/* ==========================================================
+   十六、对外 API
+   ========================================================== */
+window.PET = {
+  startSession: startSession, startReview: startReview, startNew: startNew,
+  flipCard: flipCard, answerSession: answerSession,
+  submitSpelling: submitSpelling, spellKeydown: spellKeydown,
+  nextAfterSpellOK: nextAfterSpellOK, retryAfterSpellFail: retryAfterSpellFail,
+  exitSession: exitSession, backHome: backHome, continueSession: continueSession,
+  startQuiz: startQuiz, answerQuiz: answerQuiz, nextQuiz: nextQuiz, exitQuiz: exitQuiz,
+  onSearch: onSearch, setDaily: setDaily, setSpeak: setSpeak, setVoiceChannel: setVoiceChannel,
+  testSpeech: testSpeech, resetAll: resetAll,
+  speakManual: speakManual, openNameModal: openNameModal, closeNameModal: closeNameModal, confirmName: confirmName,
+  stats: function(){
+    return { total: TOTAL_WORDS, learned: learnedCount(), mastered: masteredCount(), name: PROFILE.name, due: dueCards().length };
+  }
+};
+
+/* ==========================================================
+   十七、启动
+   ========================================================== */
+function boot(){
+  try {
+    var btns = document.querySelectorAll('.tabbar button');
+    for(var i=0; i<btns.length; i++){
+      (function(btn){
+        btn.addEventListener('click', function(){
+          var t = btn.getAttribute('data-tab');
+          if(t === currentTab) return;
+          currentTab = t; updateTabs(); render(true);
+        });
+      })(btns[i]);
+    }
+    updateTabs(); render(true); updateUserDisplay();
+    nameModalEl = document.getElementById('nameModal');
+    nmInputEl = document.getElementById('nmInput');
+    if(nmInputEl){
+      nmInputEl.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.keyCode === 13){ e.preventDefault(); confirmName(); }
+      });
+    }
+    if(nameModalEl){
+      nameModalEl.addEventListener('click', function(e){
+        if(e.target === nameModalEl && nameModalMode === 'edit') closeNameModal();
+      });
+    }
+    if(!PROFILE.created) setTimeout(function(){ openNameModal('create'); }, 400);
+    if(window.__PET_ERRORS__ && window.__PET_ERRORS__.length > 0){
+      window.__PET_SHOW_ERROR__(window.__PET_ERRORS__[0].msg);
+      window.__PET_ERRORS__ = [];
+    }
+    try { console.log('[PET] 词库加载完成，共 ' + TOTAL_WORDS + ' 个单词；用户：' + PROFILE.name); } catch(e){}
+  } catch(err){
+    var m = document.getElementById('main');
+    if(m) m.innerHTML = '<div class="card center"><div class="big-emoji">&#x1F62E;</div><h2>加载失败</h2><p class="muted">' + escHtml(err && err.message ? err.message : '未知错误') + '</p></div>';
+  }
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
+})();
+</script>
+</body>
+</html>
