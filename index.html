@@ -32,19 +32,16 @@
 </script>
 
 <style>
-  /* 难度标签 */
-.level-tag{
-  position:absolute;top:14px;right:60px;
-  font-size:10px;font-weight:800;
-  padding:3px 8px;border-radius:999px;white-space:nowrap;
-}
-.level-tag.pet{background:#E0F5F2;color:#0D9488;border:1.5px solid #99F6E4;}
-.level-tag.basic{background:#DBEAFE;color:#1D4ED8;border:1.5px solid #BFDBFE;}
-
-/* 词库列表难度小圆点 */
-.lv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-.lv-dot.pet{background:#14B8A6;}
-.lv-dot.basic{background:#3B82F6;}
+  .level-tag{
+    position:absolute;top:14px;right:60px;
+    font-size:10px;font-weight:800;
+    padding:3px 8px;border-radius:999px;white-space:nowrap;
+  }
+  .level-tag.pet{background:#E0F5F2;color:#0D9488;border:1.5px solid #99F6E4;}
+  .level-tag.basic{background:#DBEAFE;color:#1D4ED8;border:1.5px solid #BFDBFE;}
+  .lv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+  .lv-dot.pet{background:#14B8A6;}
+  .lv-dot.basic{background:#3B82F6;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   :root{--teal:#14B8A6;--blue:#3B82F6;--orange:#F97316;--purple:#8B5CF6;--green:#10B981;--text:#1E3A3A;--muted:#7B9B9B;}
   html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
@@ -116,16 +113,6 @@
   .flash-cn{font-size:26px;font-weight:900;text-align:center;text-shadow:0 2px 10px rgba(20,80,80,.20);line-height:1.3;}
   .flash-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:12px;color:#B8D1CE;font-weight:700;}
   .flash-back .flash-hint{color:rgba(255,255,255,.80)}
-.level-tag{
-  position:absolute;top:14px;right:60px;
-  font-size:10px;font-weight:800;
-  padding:3px 8px;border-radius:999px;white-space:nowrap;
-}
-.level-tag.pet{background:#E0F5F2;color:#0D9488;border:1.5px solid #99F6E4;}
-.level-tag.basic{background:#DBEAFE;color:#1D4ED8;border:1.5px solid #BFDBFE;}
-.lv-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-.lv-dot.pet{background:#14B8A6;}
-.lv-dot.basic{background:#3B82F6;}
   .answer-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
   .ans-btn{border:0;border-radius:22px;padding:14px 6px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;font-weight:800;color:#fff;letter-spacing:.5px;transition:transform .1s,box-shadow .1s;}
   .ans-emoji{font-size:27px;line-height:1}
@@ -317,6 +304,55 @@
 'use strict';
 
 /* ==========================================================
+   云端同步配置（JSONBin）—— 已填好你的 Bin ID 和 Key
+   ========================================================== */
+var JSONBIN_BIN_ID = '6acf478dac6210605a30352d';
+var JSONBIN_API_KEY = '$2a$10$L3BHo8TRvobtbrirN9sLzOosw9kvEEDJNT9z7B7hvmXr7ULursR9.';
+
+async function fetchFromCloud(){
+  try {
+    var resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    var result = await resp.json();
+    if(result && result.record && result.record.data && result.record.data.petWords){
+      return result.record.data.petWords;
+    }
+    return null;
+  } catch(e){
+    console.error('PET 云端拉取失败:', e);
+    return null;
+  }
+}
+
+async function pushToCloud(data){
+  try {
+    var getResp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
+      headers: { 'X-Master-Key': JSONBIN_API_KEY }
+    });
+    var current = await getResp.json();
+    var fullData = (current.record && current.record.data) ? current.record.data : {};
+    fullData.petWords = data;
+
+    var putResp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_API_KEY
+      },
+      body: JSON.stringify({ data: fullData })
+    });
+    if(!putResp.ok) throw new Error('PUT failed');
+    console.log('PET 云端同步成功');
+  } catch(e){
+    console.error('PET 云端上传失败:', e);
+  }
+}
+/* ==========================================================
+   云端同步配置结束
+   ========================================================== */
+
+/* ==========================================================
    一、PET 词库（17 大类，约 530 个词）
    ========================================================== */
 var RAW = [
@@ -363,13 +399,6 @@ var RAW = [
 "account|账户  advertise|做广告  afford|负担得起  amount|金额  balance|余额  bankrupt|破产的  bargain|便宜货  bill|账单  borrow|借入  brand|品牌  budget|预算  business|生意  capital|资本  cash|现金  charge|收费  cheque|支票  commercial|商业的  company|公司  compete|竞争  consumer|消费者  contract|合同  cost|花费  credit|信用  currency|货币  customer|顾客  debt|债务  demand|需求  discount|折扣  economy|经济  employ|雇用  exchange rate|汇率  expense|费用  expensive|昂贵的  export|出口  fee|费用  finance|金融  fortune|财富  fund|基金  goods|货物  income|收入  industry|工业  insurance|保险  interest|利息  invest|投资  invoice|发票  loan|贷款  loss|损失  luxury|奢侈品  market|市场  merchandise|商品  money|钱  mortgage|抵押贷款  offer|报价  owe|欠  payment|付款  pension|养老金  percentage|百分比  price|价格  profit|利润  purchase|购买  rate|比率  receipt|收据  refund|退款  revenue|收入  salary|薪水  sale|销售  save|储蓄  share|股份  shopping|购物  spend|花费  stock|股票  supply|供应  tax|税  trade|贸易  transaction|交易  value|价值  wealth|财富  wage|工资  withdraw|取款  worth|价值"]
 ];
 
-/* ==========================================================
-   词库构建（去重 + 难度分层）
-   现有 RAW 里的词 → level='pet'
-   RAW_ADD 里的词 → level='basic'（如果单词已存在于 RAW 则跳过）
-   ========================================================== */
-
-/* 4 批新词合并去重后的集合，格式：单词|词性|中文 */
 var RAW_ADD = [
 ["人物与关系","\uD83D\uDC65",
 "gentleman|n.|绅士  girl|n.|女孩  god|n.|神  he|pron.|他  her|det./pron.|她的；她  him|pron.|他  his|det./pron.|他的  human|n.|人类  I|pron.|我  it|pron.|它  its|det.|它的  lady|n.|女士  man|n.|男人  myself|pron.|我自己  king|n.|国王  youth|n.|青年；青春  teenager|n.|青少年  waiter|n.|男服务员  waitress|n.|女服务员  winner|n.|获胜者  woman|n.|女人  worker|n.|工人  writer|n.|作家  uncle|n.|叔叔；舅舅  vet|n.|兽医  tailor|n.|裁缝  prince|n.|王子  princess|n.|公主"],
@@ -442,7 +471,6 @@ var WORDS = [];
 (function(){
   var seen = {};
 
-  /* 根据分类粗略推断词性 */
   function inferPos(catName){
     if(!catName) return '';
     if(catName.indexOf('动词') >= 0) return 'v.';
@@ -470,7 +498,6 @@ var WORDS = [];
     return '';
   }
 
-  /* 1. 先加载现有 PET 词库 */
   for(var ci=0; ci<RAW.length; ci++){
     var catName = RAW[ci][0], catEmoji = RAW[ci][1], block = RAW[ci][2];
     var pairs = block.split(/\s{2,}/);
@@ -484,18 +511,10 @@ var WORDS = [];
       if(!w) continue;
       if(seen[w]) continue;
       seen[w] = true;
-      WORDS.push({
-        w: w,
-        z: rest,
-        cat: catName,
-        emoji: catEmoji,
-        pos: inferPos(catName),   /* 自动推断词性 */
-        level: 'pet'
-      });
+      WORDS.push({ w: w, z: rest, cat: catName, emoji: catEmoji, pos: inferPos(catName), level: 'pet' });
     }
   }
 
-  /* 2. 再加载新增词库（去重后标记为 basic） */
   for(var ci2=0; ci2<RAW_ADD.length; ci2++){
     var catName2 = RAW_ADD[ci2][0], catEmoji2 = RAW_ADD[ci2][1], block2 = RAW_ADD[ci2][2];
     var pairs2 = block2.split(/\s{2,}/);
@@ -510,14 +529,7 @@ var WORDS = [];
       if(!w2 || !z2) continue;
       if(seen[w2]) continue;
       seen[w2] = true;
-      WORDS.push({
-        w: w2,
-        z: z2,
-        cat: catName2,
-        emoji: catEmoji2,
-        pos: pos2,
-        level: 'basic'
-      });
+      WORDS.push({ w: w2, z: z2, cat: catName2, emoji: catEmoji2, pos: pos2, level: 'basic' });
     }
   }
 })();
@@ -533,35 +545,43 @@ var DAY = 86400000;
 var SPELL_MAX_TRIES = 3;
 
 /* ==========================================================
-   三、存储
+   三、存储（本地 + 云端）
    ========================================================== */
 var KEY = 'pet_words_v3';
 function blankState(){
   return {
     cards:{}, history:{}, checkinsList:[],
-    settings:{ dailyNew:10, autoSpeak:true, voiceChannel:'auto' },
+    settings:{ dailyNew:25, autoSpeak:true, voiceChannel:'auto' },
     spellMastered:{}
   };
 }
+
 var S = blankState();
+
+function applySavedState(parsed){
+  if(!parsed || typeof parsed !== 'object') return;
+  if(parsed.cards) S.cards = parsed.cards;
+  if(parsed.history) S.history = parsed.history;
+  if(parsed.checkinsList && parsed.checkinsList.length !== undefined) S.checkinsList = parsed.checkinsList;
+  if(parsed.settings){
+    if(typeof parsed.settings.dailyNew === 'number') S.settings.dailyNew = parsed.settings.dailyNew;
+    if(typeof parsed.settings.autoSpeak === 'boolean') S.settings.autoSpeak = parsed.settings.autoSpeak;
+    if(typeof parsed.settings.voiceChannel === 'string') S.settings.voiceChannel = parsed.settings.voiceChannel;
+  }
+  if(parsed.spellMastered) S.spellMastered = parsed.spellMastered;
+}
+
+/* 先读本地：立刻有内容显示，不白屏 */
 try {
   var rawSaved = localStorage.getItem(KEY);
-  if(rawSaved){
-    var parsed = JSON.parse(rawSaved);
-    if(parsed && typeof parsed === 'object'){
-      if(parsed.cards) S.cards = parsed.cards;
-      if(parsed.history) S.history = parsed.history;
-      if(parsed.checkinsList && parsed.checkinsList.length !== undefined) S.checkinsList = parsed.checkinsList;
-      if(parsed.settings){
-        if(typeof parsed.settings.dailyNew === 'number') S.settings.dailyNew = parsed.settings.dailyNew;
-        if(typeof parsed.settings.autoSpeak === 'boolean') S.settings.autoSpeak = parsed.settings.autoSpeak;
-        if(typeof parsed.settings.voiceChannel === 'string') S.settings.voiceChannel = parsed.settings.voiceChannel;
-      }
-      if(parsed.spellMastered) S.spellMastered = parsed.spellMastered;
-    }
-  }
+  if(rawSaved) applySavedState(JSON.parse(rawSaved));
 } catch(e){ S = blankState(); }
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+/* 写：本地 + 云端一起保存 */
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+  pushToCloud(S);
+}
 
 /* ==========================================================
    四、用户名
@@ -724,10 +744,6 @@ function greeting(){
 
 /* ==========================================================
    六、双通道语音系统（防叠加版）
-   核心：
-   1. 全局播放令牌 SPEECH._token，每次新发音递增
-   2. stopAllSpeech() 一次性取消本地 TTS + 在线音频 + 定时器
-   3. 本地失败判定 1200ms，且检查 speaking/pending
    ========================================================== */
 var SPEECH = {
   supported: ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window),
@@ -774,7 +790,6 @@ if(SPEECH.supported){
   }, 250);
 }
 
-/* 全局停止：唯一入口 */
 function stopAllSpeech(){
   SPEECH._token++;
   if(SPEECH._fallbackTimer){
@@ -796,7 +811,6 @@ function stopAllSpeech(){
   }
 }
 
-/* iOS 手势解锁 */
 function unlockSpeech(){
   if(SPEECH.unlocked || !SPEECH.supported) return;
   SPEECH.unlocked = true;
@@ -811,7 +825,6 @@ document.addEventListener('touchstart', unlockSpeech, { once:true, passive:true 
 document.addEventListener('touchend',   unlockSpeech, { once:true, passive:true });
 document.addEventListener('click',      unlockSpeech, { once:true });
 
-/* 在线发音 */
 function playOnline(word, token){
   if(!word) return;
   if(SPEECH._token !== token) return;
@@ -843,7 +856,6 @@ function playOnline(word, token){
   } catch(e){ SPEECH.lastError = 'online-exception'; }
 }
 
-/* 本地发音 */
 function speakLocal(text, token, onFail){
   if(!SPEECH.supported){ if(onFail) onFail('unsupported'); return; }
   try {
@@ -880,7 +892,6 @@ function speakLocal(text, token, onFail){
   }
 }
 
-/* 核心分发 */
 function _doSpeak(text){
   if(!text) return;
   stopAllSpeech();
@@ -1626,7 +1637,7 @@ function renderMe(){
   var learned = learnedCount();
   var mastered = masteredCount();
   var learning = learned - mastered;
-  var opts = [10, 15, 20, 25];
+  var opts = [25, 50];
   var segHtml = '';
   for(var i=0; i<opts.length; i++){
     var n = opts[i];
@@ -1651,7 +1662,7 @@ function renderMe(){
     '</div>' +
     '<div class="card">' +
       '<b style="font-size:15px">每天学几个新词？</b>' +
-      '<p class="muted small" style="margin:6px 0 0">PET 难度更高，建议 10-15 个</p>' +
+      '<p class="muted small" style="margin:6px 0 0">可选 25 或 50 个</p>' +
       '<div class="seg">' + segHtml + '</div>' +
     '</div>' +
     '<div class="card">' +
@@ -1689,7 +1700,7 @@ function renderMe(){
     '</div>' +
     '<div class="card">' +
       '<b style="font-size:15px">数据管理</b>' +
-      '<p class="muted small" style="margin:8px 0 14px">学习记录保存在本机浏览器里，换设备或清理浏览器数据会丢失哦。</p>' +
+      '<p class="muted small" style="margin:8px 0 14px">学习记录会保存在本机浏览器，并自动同步到云端。</p>' +
       '<button class="btn ghost" onclick="PET.resetAll()" style="color:#C2410C;border-color:#FED7AA;box-shadow:0 4px 0 #FFEDD5">清空全部学习记录</button>' +
     '</div>' +
     '<p class="muted small" style="text-align:center;padding:4px 0 12px">PET 单词乐园 · 祝你考试顺利</p>';
@@ -1775,6 +1786,19 @@ window.PET = {
    ========================================================== */
 function boot(){
   try {
+    /* 启动时异步从云端拉取最新数据（不影响首屏显示） */
+    fetchFromCloud().then(function(cloudState){
+      if(cloudState){
+        applySavedState(cloudState);
+        try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+        render(true);
+        updateUserDisplay();
+        console.log('[PET] 已从云端加载最新数据');
+      }
+    }).catch(function(err){
+      console.warn('[PET] 云端拉取异常:', err);
+    });
+
     var btns = document.querySelectorAll('.tabbar button');
     for(var i=0; i<btns.length; i++){
       (function(btn){
