@@ -49,8 +49,9 @@
   #app{width:100%;max-width:520px;height:100vh;height:100dvh;display:flex;flex-direction:column;background:linear-gradient(180deg,#E6F4F1 0%,#F0FBFF 38%,#FFF7F0 100%);overflow:hidden;position:relative;box-shadow:0 0 40px rgba(20,140,120,.12);}
   .topbar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 14px;background:linear-gradient(120deg,#5EEAD4,#14B8A6 48%,#3B82F6);border-radius:0 0 28px 28px;color:#fff;box-shadow:0 6px 20px rgba(20,184,166,.28);position:relative;z-index:5;}
   .brand-wrap{display:flex;align-items:center;gap:10px;min-width:0}
-  .avatar-btn{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.30);border:2px solid rgba(255,255,255,.55);display:grid;place-items:center;font-size:22px;cursor:pointer;transition:.15s;}
+  .avatar-btn{flex:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.30);border:2px solid rgba(255,255,255,.55);display:grid;place-items:center;font-size:22px;cursor:pointer;transition:.15s;padding:0;overflow:hidden;}
   .avatar-btn:active{transform:scale(.92)}
+  .avatar-btn img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
   .user-info{min-width:0}
   .user-greeting{font-size:11px;opacity:.9;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .user-name{font-size:16px;font-weight:800;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
@@ -166,11 +167,15 @@
   .name-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(20,40,40,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
   .name-modal.show{display:flex}
   .name-modal .nm-box{background:#fff;border-radius:26px;padding:26px 22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(20,60,60,.40);border:3px solid #F0F8F6;position:relative;}
-  .name-modal .nm-emoji{font-size:56px;line-height:1;margin-bottom:8px}
+  .name-modal .nm-emoji{width:76px;height:76px;margin:0 auto 10px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#F0FBFF;border:3px solid #E0F5F2;font-size:46px;line-height:1;padding:0;}
+  .name-modal .nm-emoji img{width:100%;height:100%;object-fit:cover;display:block;}
   .name-modal h3{margin:0 0 8px;font-size:20px;font-weight:800;color:#1E3A3A}
-  .name-modal .nm-tip{margin:0 0 18px;font-size:13px;color:var(--muted);font-weight:600;line-height:1.6;}
+  .name-modal .nm-tip{margin:0 0 14px;font-size:13px;color:var(--muted);font-weight:600;line-height:1.6;}
   .name-modal input{width:100%;border:3px solid #CCF0EB;background:#F5FBFA;border-radius:16px;padding:14px 18px;font-size:17px;font-weight:800;font-family:inherit;color:var(--text);outline:none;text-align:center;margin-bottom:14px;transition:.15s;}
   .name-modal input:focus{border-color:#14B8A6;background:#fff}
+  .nm-avatar-actions{display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;}
+  .nm-upload-btn{display:inline-block;font-size:12px;font-weight:800;padding:8px 14px;border-radius:999px;background:#F0FBFF;border:2px solid #CCF0EB;color:#0D9488;cursor:pointer;font-family:inherit;transition:.12s;}
+  .nm-upload-btn:active{transform:scale(.95);}
   .name-modal .nm-avatars{display:flex;justify-content:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .name-modal .nm-avatars button{width:46px;height:46px;border-radius:50%;border:2.5px solid #E0F5F2;background:#fff;font-size:24px;cursor:pointer;transition:.12s;display:grid;place-items:center;padding:0;}
   .name-modal .nm-avatars button.on{border-color:#14B8A6;background:#E0F5F2;transform:scale(1.08);box-shadow:0 3px 10px rgba(20,184,166,.35);}
@@ -226,6 +231,16 @@
   .stage-pill.s5{background:#EDE9FE;color:#5B21B6}
   .stage-pill.s6{background:#CFFAFE;color:#0E7490}
   .stage-pill.s7{background:#FEF9C3;color:#854D0E}
+  .data-actions{display:grid;gap:10px;}
+
+  /* 同步状态指示器 */
+  .sync-dot{width:10px;height:10px;border-radius:50%;background:#B8D1CE;cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,.35);flex:none;transition:.2s;}
+  .sync-dot.syncing{background:#FACC15;animation:syncPulse 1s infinite;}
+  .sync-dot.synced{background:#22C55E;}
+  .sync-dot.error{background:#EF4444;}
+  .sync-dot.skipped{background:#F97316;}
+  .sync-dot.idle{background:#B8D1CE;}
+  @keyframes syncPulse{0%,100%{opacity:.35}50%{opacity:1}}
 </style>
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -243,12 +258,11 @@
 })();
 </script>
 </head>
-
 <body>
 <div id="app">
   <header class="topbar">
     <div class="brand-wrap">
-      <button class="avatar-btn" onclick="PET.openNameModal()" title="点击修改名字">
+      <button class="avatar-btn" onclick="PET.openNameModal()" title="点击修改名字和头像">
         <span id="avatarEmoji">&#x1F98A;</span>
       </button>
       <div class="user-info">
@@ -256,7 +270,10 @@
         <div class="user-name" id="userNameDisplay">PET 小勇士<span class="edit-icon">&#x270F;&#xFE0F;</span></div>
       </div>
     </div>
-    <div class="streak" id="streakBadge">连续 0 天</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="sync-dot idle" id="topSyncDot" title="同步状态" onclick="PET.manualSync()"></span>
+      <div class="streak" id="streakBadge">连续 0 天</div>
+    </div>
   </header>
 
   <main id="main">
@@ -290,6 +307,14 @@
     <div class="nm-emoji" id="nmEmoji">&#x1F98A;</div>
     <h3 id="nmTitle">欢迎来到 PET 单词乐园！</h3>
     <p class="nm-tip" id="nmTip">给自己起一个名字吧，可以随时修改哦～</p>
+
+    <div class="nm-avatar-actions">
+      <label class="nm-upload-btn" for="nmAvatarFile">&#x1F4F7; 上传自定义头像</label>
+      <input type="file" id="nmAvatarFile" accept="image/*" style="display:none"
+             onchange="PET.handleAvatarFile(this)">
+      <button type="button" class="nm-upload-btn" onclick="PET.resetAvatarImage()">&#x1F3A8; 用 emoji</button>
+    </div>
+
     <div class="nm-avatars" id="nmAvatars"></div>
     <input type="text" id="nmInput" maxlength="12" placeholder="输入你的名字（最多 12 字）" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <div class="nm-btn-row">
@@ -309,6 +334,43 @@
 var JSONBIN_BIN_ID = '6acf478dac6210605a30352d';
 var JSONBIN_API_KEY = '$2a$10$VTHBGSARIANASY4YCgSNqOLqnT3r90YlEgTySZZuvCivOddgHrlZa';
 
+/* 同步状态指示器 */
+var SYNC = { status:'idle', lastAt:0, lastError:'', inflight:0 };
+
+function syncStatusText(){
+  var map = {
+    idle:'空闲', syncing:'正在同步…', synced:'已同步',
+    error:'同步失败', skipped:'云端更新，已跳过上传'
+  };
+  var s = map[SYNC.status] || '未知';
+  if(SYNC.status === 'error' && SYNC.lastError) s += '（' + SYNC.lastError + '）';
+  return s;
+}
+
+function updateSyncDot(){
+  var dot = document.getElementById('topSyncDot');
+  if(dot){
+    dot.className = 'sync-dot ' + SYNC.status;
+    var label = '同步状态：' + syncStatusText();
+    if(SYNC.lastAt) label += '\n上次：' + new Date(SYNC.lastAt).toLocaleString('zh-CN');
+    label += '\n点击可立即同步';
+    dot.title = label;
+  }
+  var st = document.getElementById('syncStatusText');
+  if(st) st.textContent = syncStatusText();
+  var la = document.getElementById('syncLastAt');
+  if(la) la.textContent = SYNC.lastAt ? new Date(SYNC.lastAt).toLocaleString('zh-CN') : '从未';
+  var ns = document.getElementById('netStatus');
+  if(ns) ns.textContent = navigator.onLine ? '在线' : '离线（数据将先存本地）';
+}
+
+function setSyncStatus(st, err){
+  SYNC.status = st;
+  if(st === 'synced') SYNC.lastAt = Date.now();
+  if(st === 'error' && err) SYNC.lastError = String(err).slice(0, 60);
+  updateSyncDot();
+}
+
 async function fetchFromCloud(){
   try {
     var resp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
@@ -325,15 +387,28 @@ async function fetchFromCloud(){
   }
 }
 
+/* 上传时先比时间戳：云端更新 → 跳过上传，防止旧数据覆盖新数据 */
 async function pushToCloud(data){
+  SYNC.inflight++;
+  setSyncStatus('syncing');
   try {
     var getResp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID + '/latest', {
       headers: { 'X-Master-Key': JSONBIN_API_KEY }
     });
     var current = await getResp.json();
     var fullData = (current.record && current.record.data) ? current.record.data : {};
-    fullData.petWords = data;
+    var cloudState = fullData.petWords;
+    var cloudTs = (cloudState && typeof cloudState.updatedAt === 'number') ? cloudState.updatedAt : 0;
+    var localTs = (data && typeof data.updatedAt === 'number') ? data.updatedAt : 0;
 
+    if(cloudTs > localTs){
+      console.warn('[PET] 云端数据更新（' + new Date(cloudTs).toLocaleString() + '），已跳过上传以避免覆盖');
+      setSyncStatus('skipped');
+      SYNC.inflight--;
+      return { skipped: true, cloudState: cloudState };
+    }
+
+    fullData.petWords = data;
     var putResp = await fetch('https://api.jsonbin.io/v3/b/' + JSONBIN_BIN_ID, {
       method: 'PUT',
       headers: {
@@ -342,17 +417,22 @@ async function pushToCloud(data){
       },
       body: JSON.stringify({ data: fullData })
     });
-    if(!putResp.ok) throw new Error('PUT failed');
-    console.log('PET 云端同步成功');
+    if(!putResp.ok) throw new Error('HTTP ' + putResp.status);
+    console.log('[PET] 云端同步成功 @ ' + new Date(localTs).toLocaleString());
+    setSyncStatus('synced');
+    SYNC.inflight--;
+    return { ok: true };
   } catch(e){
     console.error('PET 云端上传失败:', e);
+    setSyncStatus('error', e && e.message ? e.message : '网络错误');
+    SYNC.inflight--;
+    return { ok: false, error: e };
   }
 }
 /* ==========================================================
    云端同步配置结束
    ========================================================== */
-
-/* ==========================================================
+   /* ==========================================================
    一、PET 词库（17 大类，约 530 个词）
    ========================================================== */
 var RAW = [
@@ -534,7 +614,6 @@ var WORDS = [];
   }
 })();
 var TOTAL_WORDS = WORDS.length;
-
 /* ==========================================================
    二、艾宾浩斯复习阶段
    ========================================================== */
@@ -548,11 +627,13 @@ var SPELL_MAX_TRIES = 3;
    三、存储（本地 + 云端）
    ========================================================== */
 var KEY = 'pet_words_v3';
+
 function blankState(){
   return {
-    cards:{}, history:{}, checkinsList:[],
+    cards:{}, history:{}, checkinsList:[], checkinLog:[],
     settings:{ dailyNew:25, autoSpeak:true, voiceChannel:'auto' },
-    spellMastered:{}
+    spellMastered:{},
+    updatedAt: 0
   };
 }
 
@@ -563,12 +644,14 @@ function applySavedState(parsed){
   if(parsed.cards) S.cards = parsed.cards;
   if(parsed.history) S.history = parsed.history;
   if(parsed.checkinsList && parsed.checkinsList.length !== undefined) S.checkinsList = parsed.checkinsList;
+  if(parsed.checkinLog && parsed.checkinLog.length !== undefined) S.checkinLog = parsed.checkinLog;
   if(parsed.settings){
     if(typeof parsed.settings.dailyNew === 'number') S.settings.dailyNew = parsed.settings.dailyNew;
     if(typeof parsed.settings.autoSpeak === 'boolean') S.settings.autoSpeak = parsed.settings.autoSpeak;
     if(typeof parsed.settings.voiceChannel === 'string') S.settings.voiceChannel = parsed.settings.voiceChannel;
   }
   if(parsed.spellMastered) S.spellMastered = parsed.spellMastered;
+  if(typeof parsed.updatedAt === 'number') S.updatedAt = parsed.updatedAt;
 }
 
 /* 先读本地：立刻有内容显示，不白屏 */
@@ -577,14 +660,15 @@ try {
   if(rawSaved) applySavedState(JSON.parse(rawSaved));
 } catch(e){ S = blankState(); }
 
-/* 写：本地 + 云端一起保存 */
+/* 写：本地 + 云端一起保存（自动加时间戳） */
 function save(){
+  S.updatedAt = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
   pushToCloud(S);
 }
 
 /* ==========================================================
-   四、用户名
+   四、用户名 + 头像（支持自定义图片）
    ========================================================== */
 var PROFILE_KEY = 'pet_profile_v3';
 var DEFAULT_NAME = 'PET 小勇士';
@@ -606,7 +690,57 @@ var PROFILE = { name: DEFAULT_NAME, avatar: DEFAULT_AVATAR, created: false };
 })();
 function saveProfile(){ try { localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); } catch(e){} }
 
+function isImageAvatar(v){ return typeof v === 'string' && v.indexOf('data:') === 0; }
+
+function avatarHTML(){
+  var av = PROFILE.avatar || DEFAULT_AVATAR;
+  if(isImageAvatar(av)){
+    return '<img src="' + escAttr(av) + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">';
+  }
+  return escHtml(av);
+}
+
+function compressImage(file, maxSize, cb){
+  try {
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        try {
+          var w = img.width, h = img.height;
+          var scale = Math.min(maxSize / w, maxSize / h, 1);
+          var nw = Math.max(1, Math.round(w * scale));
+          var nh = Math.max(1, Math.round(h * scale));
+          var canvas = document.createElement('canvas');
+          canvas.width = nw; canvas.height = nh;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, nw, nh);
+          ctx.drawImage(img, 0, 0, nw, nh);
+          cb(canvas.toDataURL('image/jpeg', 0.85));
+        } catch(err){ cb(null); }
+      };
+      img.onerror = function(){ cb(null); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ cb(null); };
+    reader.readAsDataURL(file);
+  } catch(e){ cb(null); }
+}
+
 var nameModalEl, nmInputEl, nmSelectedAvatar = DEFAULT_AVATAR, nameModalMode = 'create';
+
+function refreshNmPreview(){
+  var el = document.getElementById('nmEmoji');
+  if(!el) return;
+  var av = nmSelectedAvatar || DEFAULT_AVATAR;
+  if(isImageAvatar(av)){
+    el.innerHTML = '<img src="' + escAttr(av) + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:block">';
+  } else {
+    el.innerHTML = escHtml(av);
+  }
+}
+
 function openNameModal(mode){
   nameModalMode = mode || 'edit';
   nmSelectedAvatar = PROFILE.avatar || DEFAULT_AVATAR;
@@ -614,20 +748,24 @@ function openNameModal(mode){
   if(!nameModalEl || !nmInputEl) return;
   document.getElementById('nmTitle').textContent = (nameModalMode === 'create') ? '欢迎来到 PET 单词乐园！' : '修改你的名字';
   document.getElementById('nmTip').textContent = (nameModalMode === 'create') ? '给自己起一个名字吧，可以随时修改哦～' : '换一个更喜欢的名字或头像吧～';
-  document.getElementById('nmEmoji').textContent = nmSelectedAvatar;
   document.getElementById('nmCancelBtn').style.display = (nameModalMode === 'create') ? 'none' : '';
+  refreshNmPreview();
   renderAvatarOptions();
   nmInputEl.value = (nameModalMode === 'create') ? '' : (PROFILE.name || '');
   nameModalEl.classList.add('show');
   setTimeout(function(){ try { nmInputEl.focus(); } catch(e){} }, 120);
 }
 function closeNameModal(){ if(nameModalEl) nameModalEl.classList.remove('show'); }
+
 function renderAvatarOptions(){
   var wrap = document.getElementById('nmAvatars');
+  if(!wrap) return;
+  var isImg = isImageAvatar(nmSelectedAvatar);
   var html = '';
   for(var i=0; i<AVATAR_OPTIONS.length; i++){
     var av = AVATAR_OPTIONS[i];
-    html += '<button type="button" class="' + (av === nmSelectedAvatar ? 'on' : '') + '" data-av="' + escAttr(av) + '">' + av + '</button>';
+    var on = (!isImg && av === nmSelectedAvatar) ? ' on' : '';
+    html += '<button type="button" class="' + on + '" data-av="' + escAttr(av) + '">' + av + '</button>';
   }
   wrap.innerHTML = html;
   var btns = wrap.querySelectorAll('button');
@@ -635,7 +773,7 @@ function renderAvatarOptions(){
     (function(b){
       b.addEventListener('click', function(){
         nmSelectedAvatar = b.getAttribute('data-av');
-        document.getElementById('nmEmoji').textContent = nmSelectedAvatar;
+        refreshNmPreview();
         var all = wrap.querySelectorAll('button');
         for(var k=0; k<all.length; k++) all[k].classList.remove('on');
         b.classList.add('on');
@@ -643,21 +781,51 @@ function renderAvatarOptions(){
     })(btns[j]);
   }
 }
+
+function handleAvatarFile(input){
+  var f = input && input.files && input.files[0];
+  if(!f) return;
+  if(f.size > 8 * 1024 * 1024){ toast('图片太大了，请选择小于 8MB 的图片'); input.value = ''; return; }
+  if(!/^image\//.test(f.type)){ toast('请选择图片文件'); input.value = ''; return; }
+  compressImage(f, 160, function(dataUrl){
+    if(!dataUrl){ toast('图片处理失败，请换一张试试'); input.value = ''; return; }
+    nmSelectedAvatar = dataUrl;
+    refreshNmPreview();
+    var wrap = document.getElementById('nmAvatars');
+    if(wrap){
+      var all = wrap.querySelectorAll('button');
+      for(var k=0; k<all.length; k++) all[k].classList.remove('on');
+    }
+    input.value = '';
+    toast('头像已选好，点确认保存～');
+  });
+}
+
+function resetAvatarImage(){
+  nmSelectedAvatar = (PROFILE.avatar && !isImageAvatar(PROFILE.avatar)) ? PROFILE.avatar : DEFAULT_AVATAR;
+  refreshNmPreview();
+  renderAvatarOptions();
+  toast('已切回 emoji 头像');
+}
+
 function confirmName(){
   if(!nmInputEl) nmInputEl = document.getElementById('nmInput');
   var val = (nmInputEl.value || '').trim();
   if(!val){ toast('名字不能为空哦～'); return; }
   if(val.length > 12) val = val.slice(0, 12);
-  PROFILE.name = val; PROFILE.avatar = nmSelectedAvatar || DEFAULT_AVATAR; PROFILE.created = true;
+  PROFILE.name = val;
+  PROFILE.avatar = nmSelectedAvatar || DEFAULT_AVATAR;
+  PROFILE.created = true;
   saveProfile(); closeNameModal(); updateUserDisplay(); render(true);
-  toast(nameModalMode === 'create' ? ('欢迎你，' + PROFILE.name + '！') : '名字已更新～');
+  toast(nameModalMode === 'create' ? ('欢迎你，' + PROFILE.name + '！') : '资料已更新～');
 }
+
 function updateUserDisplay(){
   var nameEl = document.getElementById('userNameDisplay');
   var avatarEl = document.getElementById('avatarEmoji');
   var greetingEl = document.getElementById('userGreeting');
   if(nameEl) nameEl.innerHTML = escHtml(PROFILE.name) + '<span class="edit-icon">&#x270F;&#xFE0F;</span>';
-  if(avatarEl) avatarEl.textContent = PROFILE.avatar || DEFAULT_AVATAR;
+  if(avatarEl) avatarEl.innerHTML = avatarHTML();
   if(greetingEl){
     var h = new Date().getHours(), g;
     if(h < 6) g = '夜深了'; else if(h < 11) g = '早上好'; else if(h < 14) g = '中午好';
@@ -706,16 +874,44 @@ function calcStreak(){
   while(set[dstr(d)]){ n++; d.setDate(d.getDate() - 1); }
   return n;
 }
+function todayCheckinCount(){
+  var t = today(), n = 0;
+  var log = S.checkinLog || [];
+  for(var i=0; i<log.length; i++){
+    if(log[i] && log[i].date === t) n++;
+  }
+  return n;
+}
+function recordCheckin(stats){
+  var now = Date.now();
+  var t = today();
+  if(!S.checkinLog) S.checkinLog = [];
+  var rec = {
+    id: now + '-' + Math.random().toString(36).slice(2, 8),
+    time: now,
+    date: t,
+    newWords: (stats && stats.newWords) || 0,
+    reviews: (stats && stats.reviews) || 0,
+    total: (stats && stats.total) || 0
+  };
+  S.checkinLog.push(rec);
+  if(S.checkinsList.indexOf(t) === -1){
+    S.checkinsList.push(t);
+    S.checkinsList.sort();
+  }
+  return rec;
+}
 function checkToday(){
   var h = hist();
   var due = dueCards().length;
+  var t = today();
   if(h['new'] >= S.settings.dailyNew && due === 0){
-    var t = today();
     if(S.checkinsList.indexOf(t) === -1){
-      S.checkinsList.push(t); S.checkinsList.sort(); save(); return true;
+      S.checkinsList.push(t); S.checkinsList.sort(); save();
     }
+    return true;
   }
-  return false;
+  return hasCheckin(t);
 }
 function shuffle(a){
   var r = a.slice();
@@ -988,7 +1184,6 @@ function stagePill(stage){
   if(stage < 1 || stage > 7) return '';
   return '<span class="stage-pill s' + stage + '">' + STAGE_LABELS[stage] + '</span>';
 }
-
 /* ==========================================================
    八、全局状态
    ========================================================== */
@@ -1009,6 +1204,7 @@ function renderHome(){
   var daily = S.settings.dailyNew;
   var newLeft = Math.max(0, daily - h['new']);
   var finished = (h['new'] >= daily && dueCount === 0);
+  var todayCnt = todayCheckinCount();
 
   var starsHtml = '';
   var starTotal = Math.min(daily + dueCount, 15);
@@ -1068,7 +1264,7 @@ function renderHome(){
 
   var mainBtn;
   if(finished){
-    mainBtn = '<button class="btn" onclick="PET.startSession()">再练一轮</button>';
+    mainBtn = '<button class="btn" onclick="PET.startSession()">再来一轮（可继续打卡）</button>';
   } else if(dueCount > 0 && newLeft > 0){
     mainBtn = '<button class="btn review" onclick="PET.startReview()">先复习 ' + dueCount + ' 个（推荐）</button>' +
               '<button class="btn" onclick="PET.startNew()">再学 ' + newLeft + ' 个新词</button>';
@@ -1087,6 +1283,9 @@ function renderHome(){
         '<div style="min-width:0">' +
           '<div class="hero-title">' + escHtml(greeting()) + '！</div>' +
           '<div class="hero-sub">' + (finished ? '今天的任务全部完成啦！' : '按艾宾浩斯曲线，及时复习记得更牢～') + '</div>' +
+          '<div style="font-size:12px;font-weight:800;color:#0D9488;margin-top:6px">' +
+            '今日已打卡 ' + todayCnt + ' 次' +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="stars-row">' + starsHtml + '</div>' +
@@ -1157,7 +1356,7 @@ function startSessionMode(mode){
   session = {
     mode: mode, queue: queue, idx: 0, done: false, checked: false, phase: 'ask',
     stats: { know:0, no:0, spellOK:0, spellFail:0, reviewKnow:0, reviewNo:0 },
-    counted: {}
+    counted: {}, checkinRec: null
   };
   currentTab = 'learn';
   updateTabs();
@@ -1282,7 +1481,13 @@ function advance(){
   session.phase = 'ask';
   if(session.idx >= session.queue.length){
     session.done = true;
-    session.checked = checkToday();
+    session.checkinRec = recordCheckin({
+      newWords: session.stats.know,
+      reviews: session.stats.reviewKnow + session.stats.reviewNo,
+      total: Object.keys(session.counted).length
+    });
+    session.checked = true;
+    checkToday();
   }
   save();
   render(true);
@@ -1324,11 +1529,13 @@ function renderLearn(){
         '<h2>今日学习计划</h2>' +
         '<p class="muted">新词 <b style="color:#0D9488">' + newLeft + '</b> 个 · ' +
           '复习 <b style="color:#F97316">' + due + '</b> 个</p>' +
+        '<p class="muted small" style="margin:0">今日已打卡 ' + todayCheckinCount() + ' 次</p>' +
         '<div class="bar" style="margin-top:16px"><i style="width:' + pct + '%"></i></div>' +
         '<p class="muted small" style="margin:0">词库进度 ' + learned + ' / ' + TOTAL_WORDS + '</p>' +
       '</div>' +
       (due > 0 ? '<button class="btn review" onclick="PET.startReview()">复习 ' + due + ' 个单词</button>' : '') +
       (newLeft > 0 ? '<button class="btn" onclick="PET.startNew()">学习 ' + newLeft + ' 个新词</button>' : '') +
+      '<button class="btn ghost" onclick="PET.startSession()">混合学习一轮（可继续打卡）</button>' +
       '<div class="card tip">' +
         '<b>艾宾浩斯复习机制</b>' +
         '<p>单词按 1、2、4、7、15、30、60 天的间隔逐步拉长复习。认识就升一级，不认识就降级重学。全部通过 7 个阶段后就是"精通"啦！</p>' +
@@ -1440,26 +1647,26 @@ function renderLearn(){
 }
 function renderLearnEnd(){
   var s = session.stats;
-  var checked = session.checked;
-  var counted = Object.keys(session.counted).length;
+  var todayCnt = todayCheckinCount();
+  var rec = session.checkinRec;
+  var timeStr = rec ? new Date(rec.time).toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' }) : '';
   return '' +
     '<div class="card center">' +
-      '<div class="big-emoji">' + (checked ? '&#x1F389;' : '&#x2705;') + '</div>' +
-      '<h2>' + (checked ? '打卡成功！' : '本轮学习完成') + '</h2>' +
-      '<p class="muted">' + (checked
-        ? escHtml(PROFILE.name) + '，连续打卡 ' + calcStreak() + ' 天，你太棒啦！'
-        : '继续保持，随时回来复习～') + '</p>' +
+      '<div class="big-emoji">&#x1F389;</div>' +
+      '<h2>打卡成功！</h2>' +
+      '<p class="muted">' + escHtml(PROFILE.name) + '，连续打卡 ' + calcStreak() + ' 天</p>' +
+      '<p style="font-size:14px;font-weight:800;color:#0D9488;margin:0 0 4px">今天第 ' + todayCnt + ' 次打卡' +
+        (timeStr ? ' · ' + timeStr : '') + '</p>' +
       '<div class="result-grid">' +
         '<div><b>' + s.reviewKnow + '</b><small>复习会</small></div>' +
         '<div><b>' + s.reviewNo + '</b><small>复习忘</small></div>' +
         '<div><b>' + s.spellOK + '</b><small>新词拼对</small></div>' +
       '</div>' +
-      '<p class="muted small" style="margin-top:14px">本轮共学习 ' + counted + ' 个单词</p>' +
+      '<p class="muted small" style="margin-top:14px">本轮共学习 ' + Object.keys(session.counted).length + ' 个单词</p>' +
     '</div>' +
-    '<button class="btn" onclick="PET.backHome()">返回首页</button>' +
-    '<button class="btn ghost" onclick="PET.continueSession()">继续学习</button>';
+    '<button class="btn" onclick="PET.continueSession()">再来一轮（继续打卡）</button>' +
+    '<button class="btn ghost" onclick="PET.backHome()">返回首页</button>';
 }
-
 /* ==========================================================
    十二、测验
    ========================================================== */
@@ -1653,13 +1860,28 @@ function renderMe(){
     stageRows += '<div class="row"><span>' + stagePill(si) + ' ' + STAGE_LABELS[si] + '（间隔 ' + STAGE_INTERVALS[si] + ' 天）</span><b>' + stageDist[si] + ' 个</b></div>';
   }
   var vc = S.settings.voiceChannel || 'auto';
+
+  var avatarBlock = isImageAvatar(PROFILE.avatar)
+    ? '<div style="width:84px;height:84px;margin:0 auto 8px;border-radius:50%;overflow:hidden;border:3px solid #E0F5F2;box-shadow:0 4px 12px rgba(20,184,166,.15)">' + avatarHTML() + '</div>'
+    : '<div style="font-size:52px;line-height:1;margin-bottom:6px">' + escHtml(PROFILE.avatar || DEFAULT_AVATAR) + '</div>';
+
   return '' +
     '<div class="card center" style="padding-bottom:14px">' +
-      '<div style="font-size:52px;line-height:1;margin-bottom:6px">' + escHtml(PROFILE.avatar || DEFAULT_AVATAR) + '</div>' +
+      avatarBlock +
       '<div style="font-size:22px;font-weight:800;margin-bottom:2px">' + escHtml(PROFILE.name) + '</div>' +
       '<p class="muted small" style="margin:4px 0 14px">这是我的 PET 学习档案</p>' +
-      '<button class="btn small" style="max-width:200px;margin:0 auto" onclick="PET.openNameModal()">修改名字和头像</button>' +
+      '<button class="btn small" style="max-width:220px;margin:0 auto" onclick="PET.openNameModal()">修改名字和头像</button>' +
     '</div>' +
+
+    '<div class="card">' +
+      '<b style="font-size:15px">&#x2601;&#xFE0F; 云端同步</b>' +
+      '<div class="row"><span>同步状态</span><b id="syncStatusText">' + syncStatusText() + '</b></div>' +
+      '<div class="row"><span>上次同步</span><b id="syncLastAt">' + (SYNC.lastAt ? new Date(SYNC.lastAt).toLocaleString('zh-CN') : '从未') + '</b></div>' +
+      '<div class="row"><span>网络</span><b id="netStatus">' + (navigator.onLine ? '在线' : '离线') + '</b></div>' +
+      '<button class="btn small" style="margin-top:12px" onclick="PET.manualSync()">&#x1F504; 立即同步</button>' +
+      '<p class="muted small" style="margin:10px 0 0">每次学习保存后会自动上传到云端；打开页面时会对比时间戳，用较新的那一份。</p>' +
+    '</div>' +
+
     '<div class="card">' +
       '<b style="font-size:15px">每天学几个新词？</b>' +
       '<p class="muted small" style="margin:6px 0 0">可选 25 或 50 个</p>' +
@@ -1692,6 +1914,7 @@ function renderMe(){
       '<div class="row"><span>学习中</span><b>' + learning + ' 个</b></div>' +
       '<div class="row"><span>累计打卡</span><b>' + checkinCount() + ' 天</b></div>' +
       '<div class="row"><span>连续打卡</span><b>' + calcStreak() + ' 天</b></div>' +
+      '<div class="row"><span>今日打卡次数</span><b>' + todayCheckinCount() + ' 次</b></div>' +
     '</div>' +
     '<div class="card">' +
       '<b style="font-size:15px">&#x1F4CA; 艾宾浩斯阶段分布</b>' +
@@ -1700,8 +1923,12 @@ function renderMe(){
     '</div>' +
     '<div class="card">' +
       '<b style="font-size:15px">数据管理</b>' +
-      '<p class="muted small" style="margin:8px 0 14px">学习记录会保存在本机浏览器，并自动同步到云端。</p>' +
-      '<button class="btn ghost" onclick="PET.resetAll()" style="color:#C2410C;border-color:#FED7AA;box-shadow:0 4px 0 #FFEDD5">清空全部学习记录</button>' +
+      '<p class="muted small" style="margin:8px 0 14px">学习记录会保存在本机浏览器，并自动同步到云端。建议定期导出备份。</p>' +
+      '<div class="data-actions">' +
+        '<button class="btn small" onclick="PET.exportData()">&#x1F4E4; 导出打卡数据（JSON）</button>' +
+        '<button class="btn ghost small" onclick="PET.triggerImport()">&#x1F4E5; 导入打卡数据</button>' +
+        '<button class="btn ghost small" onclick="PET.resetAll()" style="color:#C2410C;border-color:#FED7AA;box-shadow:0 4px 0 #FFEDD5">清空全部学习记录</button>' +
+      '</div>' +
     '</div>' +
     '<p class="muted small" style="text-align:center;padding:4px 0 12px">PET 单词乐园 · 祝你考试顺利</p>';
 }
@@ -1720,11 +1947,199 @@ function testSpeech(){
   if(statusEl) statusEl.innerHTML = msg;
   _doSpeak('Hello, this is a test.');
 }
+
+/* ==========================================================
+   十四-b、导入导出 + 手动同步
+   ========================================================== */
+function exportData(){
+  try {
+    var payload = {
+      app: 'PET单词乐园',
+      version: 3,
+      exportedAt: new Date().toISOString(),
+      profile: { name: PROFILE.name, avatar: PROFILE.avatar },
+      data: {
+        cards: S.cards,
+        history: S.history,
+        checkinsList: S.checkinsList,
+        checkinLog: S.checkinLog || [],
+        settings: S.settings,
+        spellMastered: S.spellMastered,
+        updatedAt: Date.now()
+      }
+    };
+    var text = JSON.stringify(payload, null, 2);
+    var blob = new Blob([text], { type: 'application/json;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'PET单词乐园备份_' + today() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch(e){}
+    }, 500);
+    toast('已导出：' + (S.checkinsList.length || 0) + ' 天打卡 / ' + Object.keys(S.cards).length + ' 个单词');
+  } catch(e){
+    toast('导出失败：' + (e && e.message ? e.message : '未知错误'));
+  }
+}
+
+function triggerImport(){
+  var el = document.getElementById('importFile');
+  if(!el){
+    el = document.createElement('input');
+    el.type = 'file';
+    el.id = 'importFile';
+    el.accept = 'application/json,.json';
+    el.style.display = 'none';
+    el.addEventListener('change', function(){ importData(el); });
+    document.body.appendChild(el);
+  }
+  el.value = '';
+  el.click();
+}
+
+function importData(input){
+  var f = input && input.files && input.files[0];
+  if(!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var payload = JSON.parse(e.target.result);
+      var data = (payload && payload.data) ? payload.data : payload;
+      if(!data || typeof data !== 'object' || (!data.cards && !data.checkinsList)){
+        toast('文件格式不正确'); input.value = ''; return;
+      }
+      var days = (data.checkinsList || []).length;
+      var words = Object.keys(data.cards || {}).length;
+      var merge = window.confirm(
+        '已读取备份文件\n' +
+        '· 打卡天数：' + days + ' 天\n' +
+        '· 已学单词：' + words + ' 个\n\n' +
+        '【确定】合并到当前记录（推荐，保留两边进度）\n' +
+        '【取消】覆盖当前记录'
+      );
+      if(merge) mergeImport(data);
+      else replaceImport(data, payload && payload.profile);
+      input.value = '';
+    } catch(err){
+      toast('解析失败：不是有效的备份文件');
+      input.value = '';
+    }
+  };
+  reader.onerror = function(){ toast('读取文件失败'); input.value = ''; };
+  reader.readAsText(f);
+}
+
+function mergeImport(data){
+  var i, k;
+
+  var dateSet = {};
+  for(i=0; i<(S.checkinsList||[]).length; i++) dateSet[S.checkinsList[i]] = 1;
+  for(i=0; i<(data.checkinsList||[]).length; i++) dateSet[data.checkinsList[i]] = 1;
+  S.checkinsList = Object.keys(dateSet).sort();
+
+  if(!S.checkinLog) S.checkinLog = [];
+  var idSet = {};
+  for(i=0; i<S.checkinLog.length; i++) idSet[S.checkinLog[i].id] = 1;
+  for(i=0; i<(data.checkinLog||[]).length; i++){
+    var rec = data.checkinLog[i];
+    if(rec && rec.id && !idSet[rec.id]){ S.checkinLog.push(rec); idSet[rec.id] = 1; }
+  }
+  S.checkinLog.sort(function(a,b){ return (a.time||0) - (b.time||0); });
+
+  var incCards = data.cards || {};
+  for(k in incCards){
+    if(!Object.prototype.hasOwnProperty.call(incCards, k)) continue;
+    var inc = incCards[k], cur = S.cards[k];
+    if(!cur){ S.cards[k] = inc; continue; }
+    var is = inc.s || 0, cs = cur.s || 0;
+    if(is > cs){ S.cards[k] = inc; }
+    else if(is === cs && (inc.n || 0) < (cur.n || 0)){ S.cards[k] = inc; }
+  }
+
+  var incHis = data.history || {};
+  for(k in incHis){
+    if(!Object.prototype.hasOwnProperty.call(incHis, k)) continue;
+    var ih = incHis[k] || {}, ch = S.history[k];
+    if(!ch){ S.history[k] = ih; continue; }
+    ch['new'] = Math.max(ch['new'] || 0, ih['new'] || 0);
+    ch.rev   = Math.max(ch.rev   || 0, ih.rev   || 0);
+    ch.quizC = Math.max(ch.quizC || 0, ih.quizC || 0);
+    ch.quizT = Math.max(ch.quizT || 0, ih.quizT || 0);
+  }
+
+  for(k in (data.spellMastered || {})){
+    if(Object.prototype.hasOwnProperty.call(data.spellMastered, k)) S.spellMastered[k] = true;
+  }
+
+  session = null; quiz = null;
+  save();
+  render(true);
+  toast('导入完成（已合并）');
+}
+
+function replaceImport(data, profile){
+  var fresh = blankState();
+  fresh.cards = data.cards || {};
+  fresh.history = data.history || {};
+  fresh.checkinsList = (data.checkinsList || []).slice().sort();
+  fresh.checkinLog = (data.checkinLog || []).slice();
+  fresh.spellMastered = data.spellMastered || {};
+  if(data.settings){
+    if(typeof data.settings.dailyNew === 'number') fresh.settings.dailyNew = data.settings.dailyNew;
+    if(typeof data.settings.autoSpeak === 'boolean') fresh.settings.autoSpeak = data.settings.autoSpeak;
+    if(typeof data.settings.voiceChannel === 'string') fresh.settings.voiceChannel = data.settings.voiceChannel;
+  }
+  fresh.updatedAt = Date.now();
+  S = fresh;
+
+  if(profile && profile.name){
+    PROFILE.name = String(profile.name).slice(0, 12);
+    if(profile.avatar) PROFILE.avatar = profile.avatar;
+    PROFILE.created = true;
+    saveProfile();
+  }
+
+  session = null; quiz = null;
+  save();
+  render(true);
+  updateUserDisplay();
+  toast('导入完成（已覆盖）');
+}
+
 function resetAll(){
   if(!window.confirm('确定要清空全部学习记录吗？此操作不可恢复。')) return;
   if(!window.confirm('再确认一次：真的要清空吗？')) return;
   S = blankState(); session = null; quiz = null; save(); render(true);
   toast('已清空学习记录');
+}
+
+function manualSync(){
+  if(!navigator.onLine){ toast('当前没有网络连接'); setSyncStatus('error', 'offline'); return; }
+  setSyncStatus('syncing');
+  fetchFromCloud().then(function(cloudState){
+    var cloudTs = (cloudState && typeof cloudState.updatedAt === 'number') ? cloudState.updatedAt : 0;
+    var localTs = (typeof S.updatedAt === 'number') ? S.updatedAt : 0;
+
+    if(cloudState && cloudTs > localTs){
+      applySavedState(cloudState);
+      try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
+      setSyncStatus('synced');
+      render(true); updateUserDisplay();
+      toast('已从云端拉取最新数据');
+      return;
+    }
+    pushToCloud(S).then(function(res){
+      if(res && res.ok) toast('已上传本地数据到云端');
+      else if(res && res.skipped) toast('云端数据更新，已自动刷新');
+      else toast('同步失败，请检查网络');
+    });
+  }).catch(function(err){
+    setSyncStatus('error', err && err.message ? err.message : '拉取失败');
+    toast('同步失败，请检查网络');
+  });
 }
 
 /* ==========================================================
@@ -1745,6 +2160,7 @@ function render(resetScroll){
       var si = document.getElementById('spellInput');
       if(si) setTimeout(function(){ try { si.focus(); } catch(e){} }, 200);
     }
+    updateSyncDot();
   } catch(err){
     mainEl.innerHTML = '<div class="card center">' +
       '<div class="big-emoji">&#x1F62E;</div>' +
@@ -1776,8 +2192,16 @@ window.PET = {
   onSearch: onSearch, setDaily: setDaily, setSpeak: setSpeak, setVoiceChannel: setVoiceChannel,
   testSpeech: testSpeech, resetAll: resetAll,
   speakManual: speakManual, openNameModal: openNameModal, closeNameModal: closeNameModal, confirmName: confirmName,
+  exportData: exportData, triggerImport: triggerImport, importData: importData,
+  handleAvatarFile: handleAvatarFile, resetAvatarImage: resetAvatarImage,
+  todayCheckinCount: todayCheckinCount,
+  manualSync: manualSync,
   stats: function(){
-    return { total: TOTAL_WORDS, learned: learnedCount(), mastered: masteredCount(), name: PROFILE.name, due: dueCards().length };
+    return {
+      total: TOTAL_WORDS, learned: learnedCount(), mastered: masteredCount(),
+      name: PROFILE.name, due: dueCards().length, todayCheckins: todayCheckinCount(),
+      syncStatus: SYNC.status, lastSyncAt: SYNC.lastAt
+    };
   }
 };
 
@@ -1786,17 +2210,51 @@ window.PET = {
    ========================================================== */
 function boot(){
   try {
-    /* 启动时异步从云端拉取最新数据（不影响首屏显示） */
+    window.addEventListener('online', function(){
+      toast('网络已恢复');
+      updateSyncDot();
+      if(SYNC.status === 'error' || SYNC.status === 'idle') manualSync();
+    });
+    window.addEventListener('offline', function(){
+      toast('网络已断开，数据将先保存在本地');
+      setSyncStatus('error', 'offline');
+    });
+
+    /* 启动时异步从云端拉取最新数据（按时间戳判断，避免旧数据覆盖新数据） */
     fetchFromCloud().then(function(cloudState){
-      if(cloudState){
+      if(!cloudState){
+        setSyncStatus('idle');
+        return;
+      }
+
+      var cloudTs = (typeof cloudState.updatedAt === 'number') ? cloudState.updatedAt : 0;
+      var localTs = (typeof S.updatedAt === 'number') ? S.updatedAt : 0;
+      var cloudHas = Object.keys(cloudState.cards || {}).length > 0 ||
+                     (cloudState.checkinsList || []).length > 0;
+      var localHas = Object.keys(S.cards || {}).length > 0 ||
+                     (S.checkinsList || []).length > 0;
+
+      var useCloud = false;
+      if(cloudTs > localTs) useCloud = true;
+      else if(cloudTs === 0 && localTs === 0 && cloudHas && !localHas) useCloud = true;
+
+      if(useCloud){
         applySavedState(cloudState);
         try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){}
         render(true);
         updateUserDisplay();
-        console.log('[PET] 已从云端加载最新数据');
+        setSyncStatus('synced');
+        console.log('[PET] 已从云端加载最新数据 @ ' + (cloudTs ? new Date(cloudTs).toLocaleString() : '（无时间戳）'));
+      } else if(localTs > cloudTs){
+        pushToCloud(S);
+        console.log('[PET] 本地数据更新，已上传到云端');
+      } else {
+        setSyncStatus('synced');
+        console.log('[PET] 本地与云端一致，无需同步');
       }
     }).catch(function(err){
       console.warn('[PET] 云端拉取异常:', err);
+      setSyncStatus('error', err && err.message ? err.message : 'network');
     });
 
     var btns = document.querySelectorAll('.tabbar button');
@@ -1809,7 +2267,7 @@ function boot(){
         });
       })(btns[i]);
     }
-    updateTabs(); render(true); updateUserDisplay();
+    updateTabs(); render(true); updateUserDisplay(); updateSyncDot();
     nameModalEl = document.getElementById('nameModal');
     nmInputEl = document.getElementById('nmInput');
     if(nmInputEl){
